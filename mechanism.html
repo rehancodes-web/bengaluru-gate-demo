@@ -4,7 +4,7 @@
 main{max-width:1410px}.viewer{grid-template-columns:minmax(0,3.4fr) minmax(240px,1fr)}.panel{gap:10px}.panel hr{width:100%;border:0;border-top:1px solid #d6e1db;margin:7px 0}.panel small{font-size:.76rem}.panel select{width:100%}.panel h2{margin-bottom:0}.callout text{font-size:16px}.stage{background:#17372f}@media(max-width:800px){.viewer{grid-template-columns:1fr}}</style><main><nav><a href="./">← Flood simulator</a><a href="#build">Bench build sheet ↓</a></nav><h1>Inside the sluice gate</h1><p>Scroll over the drawing to separate the gate. Select a part to see its assembly labels.</p>
 <div class="viewer"><div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded mechanism. Use up and down arrows to change separation."><svg id="drawing" viewBox="-145 38 1010 480" role="img" aria-label="Axonometric gate cartridge with actuator, yoke, guide rails, gate leaf, sill, sensors and control panel"><defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#41675b" stroke-width=".55"/></pattern><linearGradient id="metal"><stop stop-color="#587579"/><stop offset=".3" stop-color="#e0e9df"/><stop offset=".68" stop-color="#98afa8"/><stop offset="1" stop-color="#466469"/></linearGradient><linearGradient id="plate" x2="1" y2="1"><stop stop-color="#d5e3d8"/><stop offset="1" stop-color="#658c87"/></linearGradient></defs>
 <rect x="-145" y="-5" width="1010" height="540" fill="url(#grid)"/><g id="art"></g><g id="tags"></g></svg></div>
-<div class="panel"><label for="pick">Inspect component</label><select id="pick"></select><h2 id="partname"></h2><p id="partinfo"></p><hr><label for="separation">Assembly separation <output id="pct"></output></label><input id="separation" type="range" min="0" max="100" value="55"><div class="btns"><button id="assemble">Assemble</button><button id="explode">Explode fully</button></div><label for="lift">Bench gate opening <output id="mm"></output></label><input id="lift" type="range" min="0" max="50" value="18"><small>Illustrated cutaway. Actuator internals show their function. Keep the purchased unit sealed.</small></div></div>
+<div class="panel"><label for="pick">Inspect component</label><select id="pick"></select><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="labelAll" style="width:auto">Label all</label><h2 id="partname"></h2><p id="partinfo"></p><hr><label for="separation">Assembly separation <output id="pct"></output></label><input id="separation" type="range" min="0" max="100" value="55"><div class="btns"><button id="assemble">Assemble</button><button id="explode">Explode fully</button></div><label for="lift">Bench gate opening <output id="mm"></output></label><input id="lift" type="range" min="0" max="50" value="18"><small>Illustrated cutaway. Actuator internals show their function. Keep the purchased unit sealed.</small></div></div>
 <section class="chapter" id="build"><h2>Build envelope and mechanical interfaces</h2><p>Build a gravity-fed, clean-water bench rig with a 100 × 50 mm port at the bottom of a divider. The 50 mm actuator stroke matches the port height. Use two hand-filled chambers and a catch tray for the first tests. This lets you measure head and leakage without introducing a recirculation pump into the experiment.</p><p><a href="cartridge.scad" download>Download the parametric cartridge model (.scad)</a>. Open in OpenSCAD to adjust lift, isolate the leaf, mirrored guides or sill, and export the divider drilling template. Hole coordinates use the sill as the vertical datum. Dry-fit and transfer-drill the purchased actuator mounts.</p><div class="tab"><table><tr><th>Qty / item</th><th>Fabrication specification</th><th>Fit and measurement</th></tr>
 <tr><td>1 tank and divider</td><td>Target internal footprint 600 × 160 mm, wall height 380 mm. Use a supported, watertight tank with a solid divider halfway along its length. Cut the 100 mm wide port centrally with its lower edge 15 mm above the floor.</td><td>Operating test depth up to 150 mm above sill. Provide a secondary catch tray sized for the full test fill. Leak-test the tank and divider independently.</td></tr>
 <tr><td>1 sliding leaf</td><td>316L stainless sheet, 116 × 74 × 2 mm. Round and deburr corners. Locate clevis on the vertical centreline. At closure the bottom edge meets the sill.</td><td>8 mm side overlap per side. At 50 mm lift the lower edge clears the full port. Check the top edge clears the yoke throughout travel.</td></tr>
@@ -99,21 +99,23 @@ const items=features.map(([part,dx,dy,right,name,first,last],index)=>{
 });
 function drawLabels(){
   const focused=items[active].part;
-  const members=items.filter(c=>c.part===focused);
+  const all=$('labelAll').checked;
+  const members=all?items:items.filter(c=>c.part===focused);
+  $('drawing').setAttribute('viewBox',all?'-145 -5 1010 540':'-145 38 1010 480');
   for(const right of [0,1]){
-    const side=members.filter(c=>c.right===right).sort((a,b)=>a.dy-b.dy);
+    const side=members.filter(c=>c.right===right).sort((a,b)=>(groups[a.part].cy+a.dy)-(groups[b.part].cy+b.dy));
     if(!side.length)continue;
     const centre=groups[focused].cy+side.reduce((total,c)=>total+c.dy,0)/side.length;
     const first=Math.max(62,Math.min(485-(side.length-1)*35,centre-(side.length-1)*17.5));
-    side.forEach((c,k)=>{c.row=first+35*k});
+    side.forEach((c,k)=>{c.row=all?16+k*24:first+35*k});
   }
   for(const [index,c] of items.entries()){
-    const visible=c.part===focused;
+    const visible=all||c.part===focused;
     c.wire.parentNode.style.display=visible?'':'none';
     if(!visible)continue;
     c.label.setAttribute('y',c.row-12);
-    c.label.setAttribute('height',26);
-    c.text.setAttribute('y',c.row+6);
+    c.label.setAttribute('height',all?21:26);
+    c.text.setAttribute('y',c.row+(all?3:6));
     const selected=index===active,p=groups[c.part],x=p.cx+c.dx,y=p.cy+c.dy;
     const start=c.right?648:71,elbow=c.right?628:83;
     const color=selected?'#ffd17d':'#759687';
@@ -132,6 +134,7 @@ function choose(index){
   $('pick').value=index;$('partname').textContent=item.name;$('partinfo').textContent=parts[item.part][1];render();
 }
 function select(i){choose(items.findIndex(c=>c.part===i))}function render(){const e=+$('separation').value/100,l=+$('lift').value,i=items[active].part;$('pct').value=Math.round(e*100)+'%';$('mm').value=l+' mm';for(const [k,p] of groups.entries()){const t=e*e*(3-2*e),rise=[5,6,7].includes(k)?l*.84:0;p.cx=p.x+t*p.dx;p.cy=p.y+t*p.dy-rise;p.g.setAttribute('transform',`translate(${p.cx} ${p.cy})`);p.g.style.opacity=k===3&&i>=4&&i<=5?.38:1}drawLabels(i)}
+$('labelAll').onchange=render;
 $('pick').onchange=()=>choose(+$('pick').value);$('lift').oninput=$('separation').oninput=render;
 function setDepth(v){$('separation').value=Math.max(0,Math.min(100,v));render()}
 $('assemble').onclick=()=>setDepth(0);$('explode').onclick=()=>setDepth(100);
