@@ -1,10 +1,10 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gate assembly · Bengaluru flood lab</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#edf2ee;color:#183932;font:16px/1.55 system-ui,sans-serif}main{max-width:1260px;margin:auto;padding:24px clamp(12px,3vw,44px) 70px}a{color:#176852}nav{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #afc3ba;padding:0 0 13px;font-size:.88rem}h1{font-size:clamp(36px,5vw,64px);letter-spacing:-.065em;line-height:1.03;margin:28px 0 12px}h2{line-height:1.15;letter-spacing:-.035em}p{margin:0 0 12px}button,select,input{font:inherit}button,select{background:white;border:1px solid #97afa3;border-radius:5px;padding:8px;color:inherit}button{cursor:pointer}input{accent-color:#c46a33;width:100%}.viewer{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(240px,1fr);background:white;border:1px solid #aec4b9;border-radius:12px;overflow:hidden;margin:20px 0}.stage{background:#12352f;color:#d7f2dd;position:relative;display:grid;align-content:center}.stage svg{width:100%;display:block}.panel{padding:clamp(14px,2.4vw,28px);display:grid;align-content:center;gap:8px}.panel label{font-size:.82rem;font-weight:730}.panel h2{margin:8px 0}.panel output{float:right;font-variant-numeric:tabular-nums}.btns{display:flex;gap:8px}.stage:focus-visible{outline:3px solid #eeb86b;outline-offset:-4px}.chapter{background:#fff;border:1px solid #c0cec5;border-radius:10px;padding:clamp(16px,3vw,32px);margin:16px 0}.chapter h2{margin-top:0}table{width:100%;border-collapse:collapse;font-size:.93rem}td,th{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid #d6e1db}th{background:#e8f1ec}li{padding:3px 0}small{color:#496456}.tab{overflow:auto}svg text{font:12px system-ui;fill:#f3ffee;paint-order:stroke;stroke:#15362f;stroke-width:3px;stroke-linejoin:round}.stage{touch-action:pinch-zoom}.callout{cursor:pointer}.callout text{font:600 14px system-ui;stroke:none}.callout .wire{pointer-events:none}.chosen{stroke:#ffe1a1!important;stroke-width:3px!important;filter:drop-shadow(0 0 2px #ffba46)}.part:hover{cursor:pointer}.part{cursor:pointer}.part:hover{filter:brightness(1.2)}@media(max-width:800px){.viewer{grid-template-columns:1fr}.panel{grid-template-columns:1fr}.stage{min-height:240px}th,td{min-width:105px}}
-</style><main><nav><a href="./">← Flood simulator</a><a href="#build">Bench build sheet ↓</a></nav><h1>Inside the sluice gate</h1><p>Scroll over the drawing to separate its layers. The page stays in place until you move the pointer outside the drawing. Click any labelled part or its callout to highlight the matching geometry, or move the lift control to trace the motion from piston rod to gate leaf.</p>
-<div class="viewer"><div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded mechanism. Use up and down arrows to change separation."><svg id="drawing" viewBox="-145 -5 1010 540" role="img" aria-label="Axonometric gate cartridge with actuator, yoke, guide rails, gate leaf, sill, sensors and control panel"><defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#41675b" stroke-width=".55"/></pattern><linearGradient id="metal"><stop stop-color="#587579"/><stop offset=".3" stop-color="#e0e9df"/><stop offset=".68" stop-color="#98afa8"/><stop offset="1" stop-color="#466469"/></linearGradient><linearGradient id="plate" x2="1" y2="1"><stop stop-color="#d5e3d8"/><stop offset="1" stop-color="#658c87"/></linearGradient></defs>
+main{max-width:1410px}.viewer{grid-template-columns:minmax(0,3.4fr) minmax(240px,1fr)}.panel{gap:10px}.panel hr{width:100%;border:0;border-top:1px solid #d6e1db;margin:7px 0}.panel small{font-size:.76rem}.panel select{width:100%}.panel h2{margin-bottom:0}.callout text{font-size:16px}.stage{background:#17372f}@media(max-width:800px){.viewer{grid-template-columns:1fr}}</style><main><nav><a href="./">← Flood simulator</a><a href="#build">Bench build sheet ↓</a></nav><h1>Inside the sluice gate</h1><p>Scroll over the drawing to separate the gate. Select a part to see its assembly labels.</p>
+<div class="viewer"><div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded mechanism. Use up and down arrows to change separation."><svg id="drawing" viewBox="-145 38 1010 480" role="img" aria-label="Axonometric gate cartridge with actuator, yoke, guide rails, gate leaf, sill, sensors and control panel"><defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#41675b" stroke-width=".55"/></pattern><linearGradient id="metal"><stop stop-color="#587579"/><stop offset=".3" stop-color="#e0e9df"/><stop offset=".68" stop-color="#98afa8"/><stop offset="1" stop-color="#466469"/></linearGradient><linearGradient id="plate" x2="1" y2="1"><stop stop-color="#d5e3d8"/><stop offset="1" stop-color="#658c87"/></linearGradient></defs>
 <rect x="-145" y="-5" width="1010" height="540" fill="url(#grid)"/><g id="art"></g><g id="tags"></g></svg></div>
-<div class="panel"><label for="separation">Assembly separation <output id="pct"></output></label><input id="separation" type="range" min="0" max="100" value="0"><div class="btns"><button id="assemble">Assemble</button><button id="explode">Explode fully</button></div><label for="lift">Bench gate opening <output id="mm"></output></label><input id="lift" type="range" min="0" max="50" value="18"><label for="pick">Inspect component</label><select id="pick"></select><h2 id="partname"></h2><p id="partinfo"></p><small>Illustrated cutaway. Actuator internals show their function. Keep the purchased unit sealed.</small></div></div>
+<div class="panel"><label for="pick">Inspect component</label><select id="pick"></select><h2 id="partname"></h2><p id="partinfo"></p><hr><label for="separation">Assembly separation <output id="pct"></output></label><input id="separation" type="range" min="0" max="100" value="55"><div class="btns"><button id="assemble">Assemble</button><button id="explode">Explode fully</button></div><label for="lift">Bench gate opening <output id="mm"></output></label><input id="lift" type="range" min="0" max="50" value="18"><small>Illustrated cutaway. Actuator internals show their function. Keep the purchased unit sealed.</small></div></div>
 <section class="chapter" id="build"><h2>Build envelope and mechanical interfaces</h2><p>Build a gravity-fed, clean-water bench rig with a 100 × 50 mm port at the bottom of a divider. The 50 mm actuator stroke matches the port height. Use two hand-filled chambers and a catch tray for the first tests. This lets you measure head and leakage without introducing a recirculation pump into the experiment.</p><p><a href="cartridge.scad" download>Download the parametric cartridge model (.scad)</a>. Open in OpenSCAD to adjust lift, isolate the leaf, mirrored guides or sill, and export the divider drilling template. Hole coordinates use the sill as the vertical datum. Dry-fit and transfer-drill the purchased actuator mounts.</p><div class="tab"><table><tr><th>Qty / item</th><th>Fabrication specification</th><th>Fit and measurement</th></tr>
 <tr><td>1 tank and divider</td><td>Target internal footprint 600 × 160 mm, wall height 380 mm. Use a supported, watertight tank with a solid divider halfway along its length. Cut the 100 mm wide port centrally with its lower edge 15 mm above the floor.</td><td>Operating test depth up to 150 mm above sill. Provide a secondary catch tray sized for the full test fill. Leak-test the tank and divider independently.</td></tr>
 <tr><td>1 sliding leaf</td><td>316L stainless sheet, 116 × 74 × 2 mm. Round and deburr corners. Locate clevis on the vertical centreline. At closure the bottom edge meets the sill.</td><td>8 mm side overlap per side. At 50 mm lift the lower edge clears the full port. Check the top edge clears the yoke throughout travel.</td></tr>
@@ -76,9 +76,15 @@ const features=[
  [8,66,32,1,'Right guide rail',7,9],[8,65,-47,1,'Right upper guide fixing',10,11],[8,65,54,1,'Right lower guide fixing',12,13],
  [9,-48,41,0,'Left EPDM seal',0,0],[10,-65,0,0,'Port divider',0,0],[10,40,72,0,'Sill / zero lift',1,3],[10,79,52,1,'Right divider fixing',6,7],[9,16,66,0,'Bottom EPDM seal',1,1],[9,61,45,1,'Right EPDM seal',2,2],[10,6,42,1,'Flow opening',8,8]
 ];
-const highlight=el('g',{'pointer-events':'none'},$('art'));const counts=[0,0];let active=11;
+const highlight=el('g',{'pointer-events':'none'},$('art'));let active=11;
+const sections=parts.map(([name])=>{
+  const optionGroup=document.createElement('optgroup');
+  optionGroup.label=name;
+  $('pick').append(optionGroup);
+  return optionGroup;
+});
 const items=features.map(([part,dx,dy,right,name,first,last],index)=>{
-  const row=16+counts[right]++*24;
+  const row=0;
   const group=el('g',{class:'callout'},$('tags'));
   const wire=path(group,'','none','#759687',0.85);wire.setAttribute('class','wire');
   const point=el('circle',{r:2,stroke:'#17372f','stroke-width':0.7,'pointer-events':'none'},group);
@@ -88,11 +94,26 @@ const items=features.map(([part,dx,dy,right,name,first,last],index)=>{
   const geometry=Array.from(groups[part].g.children).slice(first,last+1);
   for(const shape of geometry)shape.onclick=event=>{event.stopPropagation();choose(index)};
   group.onclick=()=>choose(index);
-  const option=document.createElement('option');option.value=index;option.textContent=name;$('pick').append(option);
+  const option=document.createElement('option');option.value=index;option.textContent=name;sections[part].append(option);
   return {part,dx,dy,right,row,wire,point,label,text,geometry,name};
 });
 function drawLabels(){
+  const focused=items[active].part;
+  const members=items.filter(c=>c.part===focused);
+  for(const right of [0,1]){
+    const side=members.filter(c=>c.right===right).sort((a,b)=>a.dy-b.dy);
+    if(!side.length)continue;
+    const centre=groups[focused].cy+side.reduce((total,c)=>total+c.dy,0)/side.length;
+    const first=Math.max(62,Math.min(485-(side.length-1)*35,centre-(side.length-1)*17.5));
+    side.forEach((c,k)=>{c.row=first+35*k});
+  }
   for(const [index,c] of items.entries()){
+    const visible=c.part===focused;
+    c.wire.parentNode.style.display=visible?'':'none';
+    if(!visible)continue;
+    c.label.setAttribute('y',c.row-12);
+    c.label.setAttribute('height',26);
+    c.text.setAttribute('y',c.row+6);
     const selected=index===active,p=groups[c.part],x=p.cx+c.dx,y=p.cy+c.dy;
     const start=c.right?648:71,elbow=c.right?628:83;
     const color=selected?'#ffd17d':'#759687';
