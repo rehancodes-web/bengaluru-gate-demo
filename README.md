@@ -10,7 +10,7 @@ Select **Lake rising**, then **Advance 1 second**. The controller requests about
 |---|---|
 | Ordinary rain | The lake starts below the opening threshold. |
 | Lake rising | The actuator moves toward the calculated opening. |
-| Cloudburst | Compare incoming flow with the outletâ€™s ability to release it. |
+| Cloudburst | Compare incoming flow with the outlet’s ability to release it. |
 | High downstream / backflow | The controller requests closure when the receiving water is high. |
 | Blocked outlet | Lower downstream conveyance reduces the available release allowance. |
 | Both sides near overflow | Track spill and the high-water alarm as storage runs out. |
