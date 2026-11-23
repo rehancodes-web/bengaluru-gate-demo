@@ -1,9 +1,9 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gate assembly · Bengaluru flood lab</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#edf2ee;color:#183932;font:16px/1.55 system-ui,sans-serif}main{max-width:1260px;margin:auto;padding:24px clamp(12px,3vw,44px) 70px}a{color:#176852}nav{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #afc3ba;padding:0 0 13px;font-size:.88rem}h1{font-size:clamp(36px,5vw,64px);letter-spacing:-.065em;line-height:1.03;margin:28px 0 12px}h2{line-height:1.15;letter-spacing:-.035em}p{margin:0 0 12px}button,select,input{font:inherit}button,select{background:white;border:1px solid #97afa3;border-radius:5px;padding:8px;color:inherit}button{cursor:pointer}input{accent-color:#c46a33;width:100%}.viewer{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(240px,1fr);background:white;border:1px solid #aec4b9;border-radius:12px;overflow:hidden;margin:20px 0}.stage{background:#12352f;color:#d7f2dd;position:relative;display:grid;align-content:center}.stage svg{width:100%;display:block}.panel{padding:clamp(14px,2.4vw,28px);display:grid;align-content:center;gap:8px}.panel label{font-size:.82rem;font-weight:730}.panel h2{margin:8px 0}.panel output{float:right;font-variant-numeric:tabular-nums}.btns{display:flex;gap:8px}.stage:focus-visible{outline:3px solid #eeb86b;outline-offset:-4px}.chapter{background:#fff;border:1px solid #c0cec5;border-radius:10px;padding:clamp(16px,3vw,32px);margin:16px 0}.chapter h2{margin-top:0}table{width:100%;border-collapse:collapse;font-size:.93rem}td,th{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid #d6e1db}th{background:#e8f1ec}li{padding:3px 0}small{color:#496456}.tab{overflow:auto}svg text{font:12px system-ui;fill:#f3ffee;paint-order:stroke;stroke:#15362f;stroke-width:3px;stroke-linejoin:round}.part{cursor:pointer}.part:hover{filter:brightness(1.2)}@media(max-width:800px){.viewer{grid-template-columns:1fr}.panel{grid-template-columns:1fr}.stage{min-height:240px}th,td{min-width:105px}}
-</style><main><nav><a href="./">← Flood simulator</a><a href="#build">Bench build sheet ↓</a></nav><h1>Inside the sluice gate</h1><p>Scroll over the assembly to separate its layers. Select a part to inspect it, or move the lift control to trace the motion from piston rod to gate leaf.</p>
-<div class="viewer"><div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded mechanism. Use up and down arrows to change separation."><svg id="drawing" viewBox="0 0 760 530" role="img" aria-label="Axonometric gate cartridge with actuator, yoke, guide rails, gate leaf, sill, sensors and control panel"><defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#41675b" stroke-width=".55"/></pattern><linearGradient id="metal"><stop stop-color="#587579"/><stop offset=".3" stop-color="#e0e9df"/><stop offset=".68" stop-color="#98afa8"/><stop offset="1" stop-color="#466469"/></linearGradient><linearGradient id="plate" x2="1" y2="1"><stop stop-color="#d5e3d8"/><stop offset="1" stop-color="#658c87"/></linearGradient></defs>
-<rect width="760" height="530" fill="url(#grid)"/><g id="art"></g><g id="tags"></g></svg></div>
+*{box-sizing:border-box}body{margin:0;background:#edf2ee;color:#183932;font:16px/1.55 system-ui,sans-serif}main{max-width:1260px;margin:auto;padding:24px clamp(12px,3vw,44px) 70px}a{color:#176852}nav{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #afc3ba;padding:0 0 13px;font-size:.88rem}h1{font-size:clamp(36px,5vw,64px);letter-spacing:-.065em;line-height:1.03;margin:28px 0 12px}h2{line-height:1.15;letter-spacing:-.035em}p{margin:0 0 12px}button,select,input{font:inherit}button,select{background:white;border:1px solid #97afa3;border-radius:5px;padding:8px;color:inherit}button{cursor:pointer}input{accent-color:#c46a33;width:100%}.viewer{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(240px,1fr);background:white;border:1px solid #aec4b9;border-radius:12px;overflow:hidden;margin:20px 0}.stage{background:#12352f;color:#d7f2dd;position:relative;display:grid;align-content:center}.stage svg{width:100%;display:block}.panel{padding:clamp(14px,2.4vw,28px);display:grid;align-content:center;gap:8px}.panel label{font-size:.82rem;font-weight:730}.panel h2{margin:8px 0}.panel output{float:right;font-variant-numeric:tabular-nums}.btns{display:flex;gap:8px}.stage:focus-visible{outline:3px solid #eeb86b;outline-offset:-4px}.chapter{background:#fff;border:1px solid #c0cec5;border-radius:10px;padding:clamp(16px,3vw,32px);margin:16px 0}.chapter h2{margin-top:0}table{width:100%;border-collapse:collapse;font-size:.93rem}td,th{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid #d6e1db}th{background:#e8f1ec}li{padding:3px 0}small{color:#496456}.tab{overflow:auto}svg text{font:12px system-ui;fill:#f3ffee;paint-order:stroke;stroke:#15362f;stroke-width:3px;stroke-linejoin:round}.stage{touch-action:pinch-zoom}.callout{cursor:pointer}.callout text{font:600 14px system-ui;stroke:none}.callout .wire{pointer-events:none}.chosen{stroke:#ffe1a1!important;stroke-width:3px!important;filter:drop-shadow(0 0 2px #ffba46)}.part:hover{cursor:pointer}.part{cursor:pointer}.part:hover{filter:brightness(1.2)}@media(max-width:800px){.viewer{grid-template-columns:1fr}.panel{grid-template-columns:1fr}.stage{min-height:240px}th,td{min-width:105px}}
+</style><main><nav><a href="./">← Flood simulator</a><a href="#build">Bench build sheet ↓</a></nav><h1>Inside the sluice gate</h1><p>Scroll over the drawing to separate its layers. The page stays in place until you move the pointer outside the drawing. Click any labelled part or its callout to highlight the matching geometry, or move the lift control to trace the motion from piston rod to gate leaf.</p>
+<div class="viewer"><div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded mechanism. Use up and down arrows to change separation."><svg id="drawing" viewBox="-145 -5 1010 540" role="img" aria-label="Axonometric gate cartridge with actuator, yoke, guide rails, gate leaf, sill, sensors and control panel"><defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" fill="none" stroke="#41675b" stroke-width=".55"/></pattern><linearGradient id="metal"><stop stop-color="#587579"/><stop offset=".3" stop-color="#e0e9df"/><stop offset=".68" stop-color="#98afa8"/><stop offset="1" stop-color="#466469"/></linearGradient><linearGradient id="plate" x2="1" y2="1"><stop stop-color="#d5e3d8"/><stop offset="1" stop-color="#658c87"/></linearGradient></defs>
+<rect x="-145" y="-5" width="1010" height="540" fill="url(#grid)"/><g id="art"></g><g id="tags"></g></svg></div>
 <div class="panel"><label for="separation">Assembly separation <output id="pct"></output></label><input id="separation" type="range" min="0" max="100" value="0"><div class="btns"><button id="assemble">Assemble</button><button id="explode">Explode fully</button></div><label for="lift">Bench gate opening <output id="mm"></output></label><input id="lift" type="range" min="0" max="50" value="18"><label for="pick">Inspect component</label><select id="pick"></select><h2 id="partname"></h2><p id="partinfo"></p><small>Illustrated cutaway. Actuator internals show their function. Keep the purchased unit sealed.</small></div></div>
 <section class="chapter" id="build"><h2>Build envelope and mechanical interfaces</h2><p>Build a gravity-fed, clean-water bench rig with a 100 × 50 mm port at the bottom of a divider. The 50 mm actuator stroke matches the port height. Use two hand-filled chambers and a catch tray for the first tests. This lets you measure head and leakage without introducing a recirculation pump into the experiment.</p><p><a href="cartridge.scad" download>Download the parametric cartridge model (.scad)</a>. Open in OpenSCAD to adjust lift, isolate the leaf, mirrored guides or sill, and export the divider drilling template. Hole coordinates use the sill as the vertical datum. Dry-fit and transfer-drill the purchased actuator mounts.</p><div class="tab"><table><tr><th>Qty / item</th><th>Fabrication specification</th><th>Fit and measurement</th></tr>
 <tr><td>1 tank and divider</td><td>Target internal footprint 600 × 160 mm, wall height 380 mm. Use a supported, watertight tank with a solid divider halfway along its length. Cut the 100 mm wide port centrally with its lower edge 15 mm above the floor.</td><td>Operating test depth up to 150 mm above sill. Provide a secondary catch tray sized for the full test fill. Leak-test the tank and divider independently.</td></tr>
@@ -46,8 +46,8 @@ function path(g,d,fill,stroke='#233f40',w=1.5){return el('path',{d,fill,stroke,'
 function box(g,x,y,w,h,d,front,side='#557370',top='#d4e1d4'){path(g,`M${x} ${y}h${w}v${h}h-${w}z`,front);path(g,`M${x+w} ${y}l${d} ${-d*.48}v${h}l${-d} ${d*.48}z`,side);path(g,`M${x} ${y}l${d} ${-d*.48}h${w}l${-d} ${d*.48}z`,top)}
 function pin(g,x,y,r){el('circle',{cx:x,cy:y,r,fill:'url(#metal)',stroke:'#314d48'},g);el('circle',{cx:x,cy:y,r:r*.38,fill:'#405854'},g)}
 function gear(g,x,y,r){let d='';for(let j=0;j<48;j++){const a=j*Math.PI/24,rr=j%4===1||j%4===2?r:r*.84;d+=(j?'L':'M')+(x+Math.cos(a)*rr)+' '+(y+Math.sin(a)*rr)}path(g,d+'Z','#dcb171');pin(g,x,y,r*.35)}
-let g=group(10,325,345,0,80);path(g,'M-81 -5L-60 -15H91V73H-81Z M-41 24V66H55V24Z','#667f79').setAttribute('fill-rule','evenodd');box(g,-85,68,175,9,18,'#91aba0');for(let x of [-70,79])pin(g,x,52,3);
-g=group(9,325,345,5,55);path(g,'M-48 15V66H61V15','none','#232f30',6);
+let g=group(10,325,345,0,80);path(g,'M-81 -5L-60 -15H91V73H-81Z M-41 24V66H55V24Z','#667f79').setAttribute('fill-rule','evenodd');box(g,-85,68,175,9,18,'#91aba0');for(let x of [-70,79])pin(g,x,52,3);path(g,'M-41 24H55V66H-41Z','transparent','none',0);
+g=group(9,325,345,5,55);for(const seal of ['M-48 15V66','M-48 66H61','M61 66V15'])path(g,seal,'none','#232f30',6);
 g=group(8,325,345,95,14);for(let x of [-62,61]){box(g,x,-56,9,123,8,'#77a99a');for(let y of [-47,54])pin(g,x+4,y,2.5)}
 g=group(7,325,345,-78,20);box(g,-52,0,110,65,4,'url(#plate)');for(let x of [-38,44])pin(g,x,10,2.2);
 g=group(6,325,345,-95,-10);path(g,'M-12 1V-12Q-12 -28 0 -28Q12 -28 12 -12V1Z','#b0bab3');pin(g,0,-16,6);
@@ -57,14 +57,63 @@ g=group(4,325,203,92,-80);box(g,-12,-13,25,27,8,'url(#metal)');gear(g,0,22,9);ge
 g=group(3,325,173,-62,-95);box(g,-17,9,34,90,15,'#b98556','#815839','#e6b780');pin(g,0,4,7);for(let y of [20,89])pin(g,-10,y,2.5);
 g=group(1,325,285,-106,20);for(let x of [-124,124]){box(g,x,0,10,100,3,'#c6ad6d');for(let y=12;y<93;y+=7)path(g,'M'+x+' '+y+'h7','none','#5f6a59',1);box(g,x-2,-8,14,9,3,'#374944')}
 g=group(0,476,211,68,-65);box(g,0,0,63,48,8,'#2a8a7a');box(g,21,17,17,13,2,'#263735');box(g,-3,7,11,11,2,'#a5bac0');for(let x=8;x<62;x+=5){pin(g,x,5,1.5);pin(g,x,43,1.5)}
-const marks=[[25,22],[130,10],[66,0],[3,48],[13,37],[4,69],[0,-16],[4,40],[69,43],[-46,55],[0,72]];
-for(let i=0;i<parts.length;i++){let o=document.createElement('option');o.value=i;o.textContent=parts[i][0];$('pick').append(o)}
-const tag=el('g',{},$('tags')),line=path(tag,'','none','#ffd68d',1.7),dot=el('circle',{r:4,fill:'#ffd68d'},tag),txt=el('text',{'font-weight':700},tag);
-function select(i){$('pick').value=i;$('partname').textContent=parts[i][0];$('partinfo').textContent=parts[i][1];render()}
-function render(){const e=+$('separation').value/100,l=+$('lift').value,i=+$('pick').value;$('pct').value=Math.round(e*100)+'%';$('mm').value=l+' mm';for(const [k,p] of groups.entries()){const t=e*e*(3-2*e),rise=[5,6,7].includes(k)?l*.84:0;p.cx=p.x+t*p.dx;p.cy=p.y+t*p.dy-rise;p.g.setAttribute('transform',`translate(${p.cx} ${p.cy})`);p.g.style.opacity=k===3&&i>=4&&i<=5?.38:1}let a=groups[i],x=a.cx+marks[i][0],y=a.cy+marks[i][1],lx=x>410?530:26,ly=Math.max(25,Math.min(506,y-34));line.setAttribute('d',`M${x} ${y} L${lx+12} ${ly+6} H${lx}`);dot.setAttribute('cx',x);dot.setAttribute('cy',y);txt.setAttribute('x',lx);txt.setAttribute('y',ly);txt.textContent=parts[i][0]}
-$('pick').onchange=()=>select(+$('pick').value);$('lift').oninput=$('separation').oninput=render;
+// Child ranges refer to the geometry emitted by box (three faces), pin (two circles) and gear.
+const features=[
+ [3,0,4,0,'Upper pivot eye',3,4],[3,-13,45,0,'Actuator housing',0,2],[3,-10,20,0,'Upper cover screw',5,6],
+ [3,-10,89,0,'Lower cover screw',7,8],[5,-2,34,0,'Lead screw thread',3,17],
+ [5,-5,65,0,'Travelling nut',18,20],[5,1,98,0,'Telescoping rod',0,2],
+ [6,0,-16,0,'Lower pivot pin',1,2],[6,-8,-6,0,'Leaf clevis tab',0,0],
+ [1,-121,-4,0,'Upstream connector',15,17],[1,-119,59,0,'Upstream level strip',0,14],
+ [7,-33,42,0,'Stainless gate leaf',0,2],[7,-38,10,0,'Left leaf fixing',3,4],
+ [7,44,10,0,'Right leaf fixing',5,6],[8,-58,29,0,'Left guide rail',0,2],
+ [8,-58,-47,0,'Left upper guide fixing',3,4],[8,-58,54,0,'Left lower guide fixing',5,6],
+ [10,-70,52,0,'Left divider fixing',4,5],
+ [4,2,-4,1,'DC motor',0,2],[4,0,22,1,'Drive pinion',3,5],[4,13,36,1,'Reduction gear',6,8],
+ [2,43,0,1,'Yoke crossbar',6,8],[2,-57,1,1,'Left yoke fixing',9,10],[2,67,1,1,'Right yoke fixing',11,12],
+ [0,4,12,1,'USB connector',6,8],[0,30,24,1,'Controller chip',3,5],[0,17,30,1,'Controller board',0,2],
+ [0,33,5,1,'Controller pin headers',9,100],[2,-58,88,1,'Left support upright',0,2],[2,65,88,1,'Right support upright',3,5],
+ [1,129,-4,1,'Downstream connector',33,35],[1,129,64,1,'Downstream level strip',18,32],
+ [8,66,32,1,'Right guide rail',7,9],[8,65,-47,1,'Right upper guide fixing',10,11],[8,65,54,1,'Right lower guide fixing',12,13],
+ [9,-48,41,0,'Left EPDM seal',0,0],[10,-65,0,0,'Port divider',0,0],[10,40,72,0,'Sill / zero lift',1,3],[10,79,52,1,'Right divider fixing',6,7],[9,16,66,0,'Bottom EPDM seal',1,1],[9,61,45,1,'Right EPDM seal',2,2],[10,6,42,1,'Flow opening',8,8]
+];
+const highlight=el('g',{'pointer-events':'none'},$('art'));const counts=[0,0];let active=11;
+const items=features.map(([part,dx,dy,right,name,first,last],index)=>{
+  const row=16+counts[right]++*24;
+  const group=el('g',{class:'callout'},$('tags'));
+  const wire=path(group,'','none','#759687',0.85);wire.setAttribute('class','wire');
+  const point=el('circle',{r:2,stroke:'#17372f','stroke-width':0.7,'pointer-events':'none'},group);
+  const start=right?648:-132;
+  const label=el('rect',{x:start,y:row-10,width:203,height:20,rx:3},group);
+  const text=el('text',{x:start+6,y:row+5},group);text.textContent=name;
+  const geometry=Array.from(groups[part].g.children).slice(first,last+1);
+  for(const shape of geometry)shape.onclick=event=>{event.stopPropagation();choose(index)};
+  group.onclick=()=>choose(index);
+  const option=document.createElement('option');option.value=index;option.textContent=name;$('pick').append(option);
+  return {part,dx,dy,right,row,wire,point,label,text,geometry,name};
+});
+function drawLabels(){
+  for(const [index,c] of items.entries()){
+    const selected=index===active,p=groups[c.part],x=p.cx+c.dx,y=p.cy+c.dy;
+    const start=c.right?648:71,elbow=c.right?628:83;
+    const color=selected?'#ffd17d':'#759687';
+    c.wire.setAttribute('d','M'+start+' '+c.row+' H'+elbow+' L'+x+' '+y);
+    c.wire.setAttribute('stroke',color);c.wire.setAttribute('stroke-width',selected?2.6:.85);
+    c.point.setAttribute('cx',x);c.point.setAttribute('cy',y);c.point.setAttribute('fill',color);
+    c.label.setAttribute('fill',selected?'#ffe0a0':'#15392f');c.label.setAttribute('stroke',color);
+    c.text.style.fill=selected?'#182e25':'#e5f2e9';
+  }
+  highlight.setAttribute('transform',groups[items[active].part].g.getAttribute('transform'));
+  $('tags').append(items[active].wire.parentNode);
+}
+function choose(index){
+  const prev=items[active];for(const shape of prev.geometry)shape.classList.remove('chosen');
+  active=index;const item=items[index];highlight.replaceChildren();for(const shape of item.geometry){shape.classList.add('chosen');const outline=shape.cloneNode(false);outline.setAttribute('fill','none');highlight.append(outline)}
+  $('pick').value=index;$('partname').textContent=item.name;$('partinfo').textContent=parts[item.part][1];render();
+}
+function select(i){choose(items.findIndex(c=>c.part===i))}function render(){const e=+$('separation').value/100,l=+$('lift').value,i=items[active].part;$('pct').value=Math.round(e*100)+'%';$('mm').value=l+' mm';for(const [k,p] of groups.entries()){const t=e*e*(3-2*e),rise=[5,6,7].includes(k)?l*.84:0;p.cx=p.x+t*p.dx;p.cy=p.y+t*p.dy-rise;p.g.setAttribute('transform',`translate(${p.cx} ${p.cy})`);p.g.style.opacity=k===3&&i>=4&&i<=5?.38:1}drawLabels(i)}
+$('pick').onchange=()=>choose(+$('pick').value);$('lift').oninput=$('separation').oninput=render;
 function setDepth(v){$('separation').value=Math.max(0,Math.min(100,v));render()}
 $('assemble').onclick=()=>setDepth(0);$('explode').onclick=()=>setDepth(100);
-$('stage').addEventListener('wheel',ev=>{if(ev.ctrlKey||!ev.deltaY)return;let old=+$('separation').value,delta=ev.deltaY*(ev.deltaMode===1?16:ev.deltaMode===2?400:1);if(old===100&&delta>0||old===0&&delta<0)return;ev.preventDefault();setDepth(old+Math.sign(delta)*Math.max(1,Math.min(10,Math.abs(delta)/14)))},{passive:false});
+$('stage').addEventListener('wheel',ev=>{if(ev.ctrlKey||!ev.deltaY)return;let old=+$('separation').value,delta=ev.deltaY*(ev.deltaMode===1?16:ev.deltaMode===2?400:1);ev.preventDefault();setDepth(old+Math.sign(delta)*Math.max(1,Math.min(10,Math.abs(delta)/14)))},{passive:false});
 $('stage').onkeydown=ev=>{if(['ArrowDown','ArrowUp','Home','End'].includes(ev.key)){ev.preventDefault();setDepth(ev.key==='Home'?0:ev.key==='End'?100:+$('separation').value+(ev.key==='ArrowDown'?5:-5))}};select(7);
 </script></html>
