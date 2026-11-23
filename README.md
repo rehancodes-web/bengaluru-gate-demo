@@ -17,8 +17,23 @@ Select **Lake rising**, then **Advance 1 second**. The controller requests about
 
 Each case supports healthy equipment, an invalid stage sensor, a jammed gate, loss of telemetry and a local stop. Export a run to CSV before resetting to compare results.
 
-**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to check all 70 scenario and equipment combinations, actuator travel, water balance and sample logging.
+**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 228 checks, including all 196 scenario, equipment-condition and controller combinations with an exact water balance.
 
 ## Street flooding cases
 
-Eight additional scenarios model runoff entering road storage. Compare blocked and reopened grates or an underpass with its pump unavailable and restored. Also test a flooded arterial, a disconnected layout, a work-zone restriction and reverse flow from a surcharged drain. Signed exchange transfers water between road and drain in each simulation step. The road drawing caps displayed depth at 50 cm; read the numeric depth for larger events.
+Eight additional scenarios model runoff entering road storage. Compare blocked and reopened grates or an underpass with its pump unavailable and restored. Also test a flooded arterial, a disconnected layout, a work-zone restriction and reverse flow from a surcharged drain. Signed exchange transfers water between road and drain in each simulation step. Ponded area grows with depth, and the drawing compresses deep water instead of capping it.
+
+## What the model includes
+
+- **Stage-storage curves:** the lake and drain widen as they fill. Water is tracked as volume, so the balance is exact.
+- **Free and submerged gate flow** with a smooth transition, and reverse flow when the drain is higher.
+- **Rainfall input:** steady, design storm, cloudburst burst, or an imported inflow series.
+- **Two controllers:** the original rule-based logic and a PI controller with anti-windup, to compare on the same storm.
+- **Realistic actuator:** slows above 1 m head across the gate and trips on torque above 1.5 m.
+- **Fault detection:** lake-sensor drift caught against the controller's own water balance; partial jams caught by commanded versus actual travel.
+- **Site data import:** paste surveyed stage-area curves, a calibrated discharge coefficient and measured inflow. The status line shows whether illustrative or imported data is in use.
+- **Bench rig link:** `GateCommissioning.ino` takes `ARM`, `POS 0-100`, `CAL`, `PULSE` and `OFF` over USB. The simulator drives it through Web Serial (desktop Chrome or Edge). Speed is limited to 2% per second, and the rig holds position if the link is silent for 3 seconds.
+
+## Still needed before field use
+
+Surveyed outlet levels on one datum, the lake's measured stage-storage curve, downstream capacity, measured gate discharge curves, actuator data sheets, the authority's approved operating and emergency rules, PLC logic designed and signed off by a qualified engineer, and witnessed commissioning tests. The simulator accepts the survey and discharge data; the rest is engineering and approval work outside this repo.
