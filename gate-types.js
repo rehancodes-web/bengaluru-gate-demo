@@ -105,9 +105,10 @@
   // The controller's view of the upstream level: frozen after a sensor failure. A frozen signal is detected
   // after 60 s of no change while flow is moving, and automatic control then holds.
   function measuredUp(m, h1) {
-    if (!faultOn(m, 'Level sensor failure')) return { v: h1, ok: true };
+    if (!faultOn(m, 'Level sensor failure')) { m.meas = h1; m.sensorOk = true; return { v: h1, ok: true }; }
     if (m.frozen === null) m.frozen = h1;
-    return { v: m.frozen, ok: m.t < FAULT_AT + 60 };
+    m.meas = m.frozen; m.sensorOk = m.t < FAULT_AT + 60;
+    return { v: m.frozen, ok: m.sensorOk };
   }
 
   function gateFlow(m, h1, h2) {
@@ -116,9 +117,11 @@
     if (m.typeId === 'flap') {
       const flapOpen = h1 - h2 > T.flapHead ? clamp((h1 - h2) / 0.15) : debris ? 0.3 : 0; // debris props it open 30%
       const a = T.amax * Math.min(flapOpen, m.pen / 100);
+      m.flapFrac = flapOpen; m.open = a;
       return orifice(h1, h2, T.b, a, T.cd);
     }
-    return orifice(h1, h2, T.b, (m.pos / 100) * T.amax, T.cd * (debris ? 0.6 : 1));
+    m.open = (m.pos / 100) * T.amax;
+    return orifice(h1, h2, T.b, m.open, T.cd * (debris ? 0.6 : 1));
   }
 
   function control(m, h1, h2) {
@@ -126,7 +129,7 @@
     const sens = T.sensed ? measuredUp(m, h1) : { v: h1, ok: true };
     let msg = '';
     if (m.typeId === 'float') {
-      const target = 100 * clamp((h1 - T.setpoint) / T.band);
+      const target = 100 * clamp((h1 - T.setpoint) / T.band); m.target = target;
       if (!jam) m.pos += clamp(target - m.pos, -T.rate, T.rate);
       msg = jam ? 'Float gate jammed: no automatic response. Send a crew.' : h1 > T.setpoint ? 'Float lifting the gate as the lake rises.' : 'Lake below 1.5 m: float holds the gate shut.';
       return msg;
@@ -138,7 +141,8 @@
 
     if (m.typeId === 'flap') {
       const reverse = h2 > sens.v;
-      if (canMove) m.pen += clamp((reverse ? 0 : 100) - m.pen, -T.rate, T.rate);
+      m.target = reverse ? 0 : 100;
+      if (canMove) m.pen += clamp(m.target - m.pen, -T.rate, T.rate);
       const outfallShut = h2 >= h1 - T.flapHead || m.pen < 5;
       if (power) { if (outfallShut && h1 > T.pumpOn) m.pump = true; if (h1 < T.pumpOff || !outfallShut) m.pump = false; } else m.pump = false;
       if (!msg) msg = reverse ? 'River higher than the drain: flap shut, penstock closing' + (m.pump ? ', pump running.' : '.') : 'Drain flowing out through the flap.';
@@ -149,7 +153,7 @@
       let zt = T.setpoint;
       if (sens.v > T.setpoint) zt = T.setpoint - 4 * (sens.v - T.setpoint);
       if (h2 >= T.dsLimit || h2 > sens.v - 0.02) zt = T.zmax; // also block reverse flow into the lake
-      zt = clamp(zt, T.zmin, T.zmax);
+      zt = clamp(zt, T.zmin, T.zmax); m.target = zt;
       if (canMove) m.z += clamp(zt - m.z, -T.zrate, T.zrate);
       if (!msg) msg = h2 >= T.dsLimit ? 'Drain high: crest raised to hold water in the lake.' : h2 > sens.v - 0.02 ? 'Drain level near the lake: crest raised to stop reverse flow.' : sens.v > T.setpoint ? 'Lowering the crest to release the rise above 1.6 m.' : 'Crest holding the lake at its normal level.';
       return msg.trim();
@@ -163,6 +167,7 @@
     } else target = 100 * clamp((sens.v - T.setpoint) / T.band);
     const closeReq = h2 >= T.dsLimit || sens.v - h2 <= 0.05;
     if (closeReq) target = 0;
+    m.target = target;
     if (canMove) m.pos += clamp(target - m.pos, -T.rate, T.rate);
     if (!msg) msg = closeReq ? (h2 >= T.dsLimit ? 'Downstream at its limit: gate closing.' : 'Head reversing: gate closing to stop backflow.') : target > 0 ? 'Opening to release the rise above 1.5 m.' : 'Lake below setpoint: gate closed.';
     return msg.trim();
@@ -171,6 +176,7 @@
   function step(m) {
     const T = m.T, S = m.S;
     let { h1, h2 } = levels(m);
+    m.prevPos = m.typeId === 'crest' ? m.z : m.pos; m.prevPen = m.pen;
     m.alarm = control(m, h1, h2);
     m.pos = clamp(m.pos, 0, 100); m.pen = clamp(m.pen, 0, 100);
     const I = S.inflow(m.t) * (T.inflowScale || 1), L = S.lateral(m.t), R = S.river(m.t);
@@ -191,7 +197,10 @@
     return m;
   }
   function record(m, lv, f) {
-    m.last = { t: m.t, h1: lv.h1, h2: lv.h2, q: f.q, qp: f.qp, pos: m.typeId === 'crest' ? m.z : m.pos, pen: m.pen, pump: m.pump };
+    const pos = m.typeId === 'crest' ? m.z : m.pos;
+    m.last = { t: m.t, h1: lv.h1, h2: lv.h2, q: f.q, qp: f.qp, pos, pen: m.pen, pump: m.pump, open: m.open || 0, flapFrac: m.flapFrac || 0,
+      moving: m.prevPos === undefined ? 0 : Math.sign(Math.round((pos - m.prevPos) * 1e6)), penMoving: m.prevPen === undefined ? 0 : Math.sign(Math.round((m.pen - m.prevPen) * 1e6)),
+      meas: m.meas === undefined ? lv.h1 : m.meas, sensorOk: m.sensorOk !== false, target: m.target === undefined ? pos : m.target };
     if (m.t % 10 === 0) m.hist.push(m.last);
   }
   // Water balance: what came in equals what is stored, released downstream and spilled.
@@ -201,6 +210,100 @@
     return Math.abs(m.V0.V1 + m.V0.V2 + k.in + k.lat - m.V1 - m.V2 - k.out - k.spill1 - k.spill2);
   }
 
-  const api = { TYPES, SCENARIOS, CONDITIONS, FAULT_AT, create, step, levels, balanceError, orifice, weir };
+  // ---------- Mechanism and flow at the gate: forces, power and flow regime for the current state ----------
+  // Illustrative component data (masses, friction, screw lead, efficiencies). Real values come from the
+  // manufacturer's data sheets; these show how the quantities scale, not a design.
+  const RHO = 1000, kN = v => v / 1000;
+  const MECH = {
+    vertical: { plateH: 2.6, mass: 1100, mu: 0.35, seal: 600, lead: 0.012, eff: 0.35 },
+    float: { plateH: 2.6, mass: 1100, mu: 0.35, seal: 600, floatD: 2.6, floatH: 1.2 },
+    radial: { R: 4.0, trunnionH: 2.6, mass: 4200, cgArm: 0.75, pinMu: 0.15, pinR: 0.1, seal: 1500, eff: 0.6 },
+    flap: { mass: 150, maxAngle: 60, penMass: 450, mu: 0.35, pumpEff: 0.6, lift: 1.0 },
+    crest: { leafL: 1.5, lever: 0.6, bore: 0.16 }
+  };
+  function flowAtGate(m) {
+    const T = m.T, L = m.last, up = Math.max(L.h1, L.h2), dn = Math.min(L.h1, L.h2), q = Math.abs(L.q);
+    const dir = L.q > 0.001 ? 'forward' : L.q < -0.001 ? 'reverse' : 'none';
+    if (m.typeId === 'crest') {
+      const H = Math.max(0, up - L.pos), yc = q > 0 ? Math.cbrt(Math.pow(q / T.b, 2) / G) : 0;
+      return { dir, regime: q < 0.001 ? 'No flow: water below the crest' : dir === 'reverse' ? 'Reverse overflow: drain water spilling back into the lake' : dn > L.pos ? 'Submerged overflow' : 'Free overflow: the nappe springs clear of the leaf',
+        head: H, depth: yc, velocity: yc > 0 ? q / (T.b * yc) : 0, froude: yc > 0 ? 1 : 0, unitQ: q / T.b, opening: H, free: dn <= L.pos };
+    }
+    const a = L.open, Cc = 0.61, yc = Math.min(a, up) * Cc, v = yc > 0 ? q / (T.b * yc) : 0, free = dn < a;
+    return { dir, regime: q < 0.001 ? (a <= 0.001 ? 'No flow: gate closed' : 'No flow: no head across the gate') : dir === 'reverse' ? 'Reverse flow: water pushed back upstream' : free ? 'Free flow: a jet leaves the lip, then a hydraulic jump' : 'Submerged flow: tailwater covers the gate lip',
+      head: up - dn, depth: yc, velocity: v, froude: yc > 0 ? v / Math.sqrt(G * yc) : 0, unitQ: q / T.b, opening: a, contraction: Cc, free };
+  }
+  // Net horizontal water thrust on a vertical plate whose bottom edge is at height a (positive = pushed downstream).
+  const plateThrust = (h1, h2, a, b) => RHO * G * b / 2 * (Math.pow(Math.max(0, h1 - a), 2) - Math.pow(Math.max(0, h2 - a), 2));
+  function mechanics(m) {
+    const T = m.T, L = m.last, id = m.typeId, M = MECH[id], g = G, out = { flow: flowAtGate(m), parts: [] };
+    const P = (name, value, note, state) => out.parts.push({ name, value, note, state: state || 'ok' });
+    const fault = c => m.condition === c && m.t >= FAULT_AT, power = !T.powered || !fault('Power cut'), jam = fault('Gate jam');
+    const mv = L.moving > 0 ? 'Raising' : L.moving < 0 ? 'Lowering' : 'Stopped';
+    if (id === 'vertical' || id === 'float') {
+      const F = plateThrust(L.h1, L.h2, L.open, T.b), W = M.mass * g, fr = M.mu * Math.abs(F) + M.seal;
+      const raise = W + fr, lower = W - fr, v = T.rate / 100 * T.amax;
+      out.thrust = F; out.hoist = raise; out.weight = W; out.friction = fr;
+      if (id === 'vertical') {
+        const pw = raise * v / M.eff, rpm = v / M.lead * 60;
+        P('Water thrust on the leaf', kN(Math.abs(F)).toFixed(1) + ' kN', F >= 0 ? 'Pressure difference pushing the plate onto its downstream guides' : 'Drain higher: pushing the plate upstream');
+        P('Guide and seal friction', kN(fr).toFixed(1) + ' kN', 'Slide friction 0.35 × thrust plus rubber seal drag');
+        P('Hoist force to raise', kN(raise).toFixed(1) + ' kN', 'Leaf weight ' + kN(W).toFixed(1) + ' kN plus friction');
+        P('Force to lower', lower >= 0 ? kN(lower).toFixed(1) + ' kN held back' : kN(-lower).toFixed(1) + ' kN pushed down', lower >= 0 ? 'The leaf falls under its own weight; the screw controls the speed' : 'Friction exceeds the weight; the spindle must push the leaf down');
+        P('Motor', !power ? 'No power' : jam ? 'Stalled' : mv, mv === 'Stopped' ? 'Starter open' : (pw / 1000).toFixed(2) + ' kW at the motor for ' + (v * 1000).toFixed(0) + ' mm/s travel', !power || jam ? 'bad' : 'ok');
+        P('Rising spindle', mv === 'Stopped' ? '0 rpm' : rpm.toFixed(0) + ' rpm', 'Lead ' + (M.lead * 1000) + ' mm per turn; leaf lifted ' + (L.open * 1000).toFixed(0) + ' mm');
+        P('Limit switches', L.pos <= 0.5 ? 'Closed switch made' : L.pos >= 99.5 ? 'Open switch made' : 'Both clear', 'End limits stop the motor and inhibit travel in that direction');
+        P('Upstream level sensor', L.meas.toFixed(2) + ' m', L.sensorOk ? 'Radar above the water, on the gate datum' : 'Frozen value detected: control holding', L.sensorOk ? 'ok' : 'bad');
+      } else {
+        const A = Math.PI * M.floatD * M.floatD / 4, sub = clamp(L.h1 - (T.setpoint - 0.5), 0, M.floatH), B = RHO * g * A * sub, Bset = RHO * g * A * 0.5;
+        out.buoyancy = B; out.balance = Bset;
+        P('Float buoyancy', kN(B).toFixed(1) + ' kN', 'Float ' + M.floatD + ' m diameter, ' + sub.toFixed(2) + ' m submerged');
+        P('Leaf weight', kN(W).toFixed(1) + ' kN', 'Carried by the counterweight through the chain over the pulley');
+        P('Water thrust on the leaf', kN(Math.abs(F)).toFixed(1) + ' kN', 'Adds ' + kN(fr).toFixed(1) + ' kN of guide friction the float must overcome');
+        P('Net lifting force', kN(B - Bset).toFixed(1) + ' kN', 'Buoyancy above the balance point at 1.5 m. About ' + (kN(fr) / kN(RHO * g * A * 0.1) / 10).toFixed(2) + ' m of rise is needed to beat guide friction (dead band)');
+        P('Gate travel', jam ? 'Jammed' : mv, 'Opening ' + L.pos.toFixed(0) + '%; closed at 1.5 m, full at 2.0 m', jam ? 'bad' : 'ok');
+        P('Power and sensors', 'None', 'Purely mechanical: unaffected by power cuts and sensor faults');
+      }
+    } else if (id === 'radial') {
+      const Fh = Math.abs(plateThrust(L.h1, L.h2, L.open, T.b)), W = M.mass * g;
+      const hoist = (W * M.cgArm * M.R + M.pinMu * Fh * M.pinR + M.seal * M.R) / M.R, vertEq = W + 0.35 * Fh + M.seal, v = T.rate / 100 * T.amax;
+      out.thrust = Fh; out.hoist = hoist; out.vertEquiv = vertEq;
+      P('Water thrust on the skin plate', kN(Fh).toFixed(1) + ' kN', 'Acts normal to the curved plate, so its line passes through the trunnion');
+      P('Load on each trunnion', kN(Fh / 2).toFixed(1) + ' kN', 'Taken by anchored trunnion girders in the piers');
+      P('Rope pull to raise', kN(hoist).toFixed(1) + ' kN', 'Gate weight ' + kN(W).toFixed(1) + ' kN on its arm, plus pin and seal friction');
+      P('A vertical gate this size would need', kN(vertEq).toFixed(1) + ' kN', 'Why radial gates suit wide openings');
+      P('Winch', !power ? 'No power' : jam ? 'Stalled' : mv, mv === 'Stopped' ? 'Brake applied' : (hoist * v / M.eff / 1000).toFixed(2) + ' kW at the motor', !power || jam ? 'bad' : 'ok');
+      P('Upstream level sensor', L.meas.toFixed(2) + ' m', L.sensorOk ? 'Feeds the PI controller' : 'Frozen value detected: control holding', L.sensorOk ? 'ok' : 'bad');
+    } else if (id === 'flap') {
+      const dP = RHO * g * (L.h1 - L.h2), ang = L.flapFrac * M.maxAngle;
+      const Fp = Math.abs(plateThrust(L.h2, L.h1, 0, T.b)), penF = M.penMass * g + M.mu * Fp;
+      const head = Math.max(0.5, L.h2 - L.h1 + M.lift), hydP = RHO * g * L.qp * head;
+      out.flapAngle = ang; out.pumpPower = hydP / M.pumpEff;
+      P('Pressure across the flap', (dP / 1000).toFixed(2) + ' kPa', dP > 0 ? 'Drain side higher: pushes the flap open' : 'River side higher: presses the flap onto its seat');
+      P('Flap angle', ang.toFixed(0) + '°', ang > 0 && m.condition !== 'Debris' ? 'Opens once the drain is ' + (T.flapHead * 100).toFixed(0) + ' cm above the river' : m.condition === 'Debris' ? 'Debris can hold it ' + (0.3 * M.maxAngle).toFixed(0) + '° open' : 'Seated and sealed', m.condition === 'Debris' ? 'bad' : 'ok');
+      P('Penstock', L.pen.toFixed(0) + '% open', L.penMoving ? (L.penMoving > 0 ? 'Opening' : 'Closing') + ', ' + kN(penF).toFixed(1) + ' kN on the spindle' : 'Holding', !power || jam ? 'bad' : 'ok');
+      P('Pump', L.pump ? 'Running' : power ? 'Off' : 'No power', L.pump ? (L.qp * 1000).toFixed(0) + ' L/s against ' + head.toFixed(2) + ' m, ' + (hydP / M.pumpEff / 1000).toFixed(1) + ' kW' : 'Starts at 1.4 m when the outfall is shut', !power ? 'bad' : 'ok');
+      P('Non-return valve', L.pump ? 'Open' : 'Closed', 'Stops river water draining back through the rising main');
+      P('Drain level sensor', L.meas.toFixed(2) + ' m', L.sensorOk ? 'Pressure transducer in the sump' : 'Frozen value detected', L.sensorOk ? 'ok' : 'bad');
+    } else if (id === 'crest') {
+      const hz = T.zmin - 0.2, top = Math.max(0, L.h1 - hz), d = Math.max(0, Math.min(L.h1, L.pos) - hz), e = Math.max(0, top - d);
+      const F = RHO * g * T.b * (top * top - e * e) / 2;
+      // centre of pressure height above the hinge, from integrating p(y) * y over the wetted leaf
+      const yc = F > 0 ? RHO * g * T.b * (top * d * d / 2 - d * d * d / 3) / F : 0;
+      const Mo = F * yc, cyl = Mo / M.lever, pres = cyl / (Math.PI * M.bore * M.bore / 4);
+      const angle = Math.acos(clamp((L.pos - hz) / M.leafL, -1, 1)) * 180 / Math.PI;
+      out.thrust = F; out.cylinder = cyl; out.moment = Mo;
+      P('Water thrust on the leaf', kN(F).toFixed(1) + ' kN', 'Over the ' + d.toFixed(2) + ' m of leaf below the surface');
+      P('Overturning moment at the hinge', kN(Mo).toFixed(1) + ' kN·m', 'Tends to lay the leaf flat');
+      P('Hydraulic cylinder force', kN(cyl).toFixed(1) + ' kN', 'Holds the leaf on a ' + M.lever + ' m lever arm');
+      P('Cylinder pressure', (pres / 1e5).toFixed(0) + ' bar', (M.bore * 1000) + ' mm bore', pres > 200e5 ? 'bad' : 'ok');
+      P('Leaf angle from vertical', angle.toFixed(0) + '°', 'Crest at ' + L.pos.toFixed(2) + ' m');
+      P('Power pack', !power ? 'No power' : jam ? 'Valve stuck' : mv === 'Stopped' ? 'Holding' : mv, 'Pilot check valves lock the cylinder if power is lost', !power || jam ? 'bad' : 'ok');
+      P('Lake level sensor', L.meas.toFixed(2) + ' m', L.sensorOk ? 'Radar above the weir pool' : 'Frozen value detected: control holding', L.sensorOk ? 'ok' : 'bad');
+    }
+    return out;
+  }
+
+  const api = { TYPES, SCENARIOS, CONDITIONS, FAULT_AT, MECH, create, step, levels, balanceError, orifice, weir, mechanics, flowAtGate, plateThrust };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GateTypes = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

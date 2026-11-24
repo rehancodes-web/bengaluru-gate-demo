@@ -5,77 +5,94 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sluice gate types compared</title>
 <style>
-  :root{--bg:#f2f7f6;--card:#fff;--ink:#153b47;--ink-2:#4e666d;--line:#ccddda;--head:#133d49;--water:#4ba4b2;--water-2:#2f8394;--earth:#b7a98a;--steel:#56656b;--warn:#c0632a;--ok:#2f7d5b;--accent:#076667}
+  :root{--bg:#f2f7f6;--card:#fff;--ink:#153b47;--ink-2:#4e666d;--line:#ccddda;--head:#133d49;--ok:#2f7d5b;--bad:#b03a2e}
   *{box-sizing:border-box}
-  body{margin:0 auto;max-width:1120px;padding:24px;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,sans-serif}
+  body{margin:0 auto;max-width:1180px;padding:24px;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,sans-serif}
   header,section{background:var(--card);padding:20px 26px;margin-bottom:14px;border-radius:8px}
-  header{background:var(--head);color:#fff}
-  header a{color:#bfe3e6}
-  h1,h2,h3,p{margin:4px 0 12px}h1{font-size:28px}h2{font-size:23px}h3{font-size:18px}
+  header{background:var(--head);color:#fff}header a{color:#bfe3e6}header small{color:#cfe3e4}
+  h1,h2,h3,p{margin:4px 0 12px}h1{font-size:28px}h2{font-size:23px}h3{font-size:17px;margin-bottom:8px}
   small,.muted{color:var(--ink-2)}
-  header small{color:#cfe3e4}
   button,select{font:inherit;padding:6px 10px;margin:3px;color:#174957;border:1px solid #9fbcb9;border-radius:6px;background:#fff;cursor:pointer}
-  button:focus-visible,select:focus-visible{outline:3px solid #ec9d46;outline-offset:2px}
-  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #ec9d46;outline-offset:2px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px}
   .tabs button[aria-selected=true]{background:var(--head);color:#fff;border-color:var(--head)}
-  .split{display:grid;grid-template-columns:1.1fr 1fr;gap:22px}
-  .facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px;margin:8px 0 0}
+  .intro{display:grid;grid-template-columns:1.3fr 1fr;gap:24px;margin-top:14px}
+  .facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px;margin:0}
   .facts dt{color:var(--ink-2)}.facts dd{margin:0}
-  svg{width:100%;height:auto;display:block;background:#f4f8f8;border-radius:6px}
-  svg text{font:13px system-ui;fill:var(--ink)}
   .row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:10px 0}
   label{font-size:15px}
-  #read{font-size:19px;font-weight:600;margin:10px 0 4px}
-  #msg{border-left:4px solid #ec9d46;padding:8px 12px;background:#fff5e7;min-height:44px}
-  #msg.bad{border-left-color:#c0392b;background:#fdecea}
-  canvas{width:100%;height:220px;display:block;background:#f4f8f8;border-radius:6px}
+  #scene{width:100%;height:auto;display:block;border-radius:8px;background:linear-gradient(#eaf3f5,#f6f9f9 60%)}
+  #scene text{font:12.5px system-ui;fill:#1d3d47}
+  #scene .lbl{font:600 12px system-ui;fill:#123843;paint-order:stroke;stroke:#ffffffd9;stroke-width:4px;stroke-linejoin:round}
+  #scene .lbl-s{font:11px system-ui;fill:#345a63;paint-order:stroke;stroke:#ffffffd9;stroke-width:3px}
+  #scene.nolabels .callout{display:none}
+  #read{font-size:18px;font-weight:600;margin:10px 0 4px}
+  #msg{border-left:4px solid #ec9d46;padding:8px 12px;background:#fff5e7;min-height:42px}
+  #msg.bad{border-left-color:var(--bad);background:#fdecea}
+  .panels{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:14px}
+  .panel{border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  td,th{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#e3efec;font-weight:600}td.v{white-space:nowrap;font-weight:600}td.n,th.n{text-align:right}
+  tr.bad td.v{color:var(--bad)}
+  .note{color:var(--ink-2);font-size:13px}
+  .flow dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:0;font-size:14.5px}
+  .flow dt{color:var(--ink-2)}.flow dd{margin:0;font-weight:600}
+  .regime{font-weight:600;margin:0 0 10px}
+  ol.chain{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px;counter-reset:c}
+  ol.chain li{counter-increment:c;flex:1 1 150px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;position:relative;background:#f9fbfb}
+  ol.chain li::before{content:counter(c);position:absolute;top:8px;right:10px;font-size:12px;color:var(--ink-2)}
+  ol.chain li b{display:block;font-size:14px}ol.chain li span{display:block;color:var(--ink-2);font-size:13px}
+  ol.chain li em{font-style:normal;font-weight:600;display:block;margin-top:4px}
+  ol.chain li.bad{border-color:#e4a59d;background:#fdf1ef}ol.chain li.bad em{color:var(--bad)}
+  ol.chain li.idle em{color:var(--ink-2)}
+  canvas{width:100%;height:200px;display:block;background:#f4f8f8;border-radius:6px}
   .legend{display:flex;gap:16px;font-size:14px;color:var(--ink-2);flex-wrap:wrap;margin-top:6px}
   .legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}
-  table{border-collapse:collapse;width:100%;font-size:15px}
-  td,th{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
-  th{background:#e3efec}td.n,th.n{text-align:right}
-  .bad-cell{color:#b03a2e;font-weight:600}.ok-cell{color:var(--ok)}
-  @media(max-width:800px){body{padding:8px}section,header{padding:14px}.split{grid-template-columns:1fr}td,th{padding:5px;font-size:13px}}
-  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  .bad-cell{color:var(--bad);font-weight:600}.ok-cell{color:var(--ok)}
+  @media(max-width:860px){body{padding:8px}section,header{padding:14px}.intro,.panels{grid-template-columns:1fr}td,th{padding:5px;font-size:13px}}
 </style>
 </head>
 <body>
 <header>
   <h1>Sluice gate types for Bengaluru flood sites</h1>
-  <p>Five working models, one per gate type, each with its own hydraulics and automatic control. Run them through the same storms and equipment failures to see where each type works and where it doesn't.</p>
-  <small>Every dimension and setting is illustrative, not a design for any site. Storage is simplified to a constant plan area. <a href="index.html">Open the detailed lake-outlet simulator</a>, which accepts surveyed site data.</small>
+  <p>Five working models, one per gate type. Each cross-section shows the mechanism part by part, the water moving through it, and the live forces, power and flow at the gate as a flood runs.</p>
+  <small>All dimensions, masses, friction and efficiency values are illustrative, not a design for any site. Storage is simplified to a constant plan area. <a href="index.html">Open the detailed lake-outlet simulator</a>, which accepts surveyed site data.</small>
 </header>
 
 <section>
   <div class="tabs" role="tablist" aria-label="Gate type" id="tabs"></div>
-  <div class="split" style="margin-top:14px">
-    <div>
-      <h2 id="tName"></h2>
-      <p id="tWhere"></p>
-      <dl class="facts">
-        <dt>Typical use</dt><dd id="tUse"></dd>
-        <dt>Automatic control</dt><dd id="tControl"></dd>
-        <dt>Needs power</dt><dd id="tPower"></dd>
-      </dl>
-    </div>
-    <div><svg id="scene" viewBox="0 0 560 300" role="img" aria-label="Gate cross-section"></svg></div>
+  <div class="intro">
+    <div><h2 id="tName"></h2><p id="tWhere"></p></div>
+    <dl class="facts"><dt>Typical use</dt><dd id="tUse"></dd><dt>Automatic control</dt><dd id="tControl"></dd><dt>Needs power</dt><dd id="tPower"></dd></dl>
   </div>
 </section>
 
 <section>
-  <h2>Run a flood</h2>
   <div class="row">
     <label>Flood case <select id="scenario"></select></label>
     <label>Equipment condition <select id="condition"></select></label>
+    <label><input type="checkbox" id="labels" checked> Label parts</label>
   </div>
-  <p class="muted" id="caseNote"></p>
+  <p class="muted" id="caseNote" style="margin:0 0 6px"></p>
   <div class="row">
     <button id="run">Run</button><button id="step">Advance 1 minute</button><button id="reset">Reset</button>
     <label>Speed <select id="speed"><option value="30">30×</option><option value="120" selected>120×</option><option value="600">600×</option></select></label>
   </div>
+  <svg id="scene" viewBox="0 -80 1000 580" role="img" aria-label="Gate cross-section with moving water"></svg>
   <div id="read" aria-live="polite"></div>
   <div id="msg" role="status"></div>
-  <canvas id="chart" width="1060" height="220" aria-label="Levels and gate position over time"></canvas>
+
+  <div class="panels">
+    <div class="panel"><h3>Mechanism, live</h3><table><tbody id="mech"></tbody></table><p class="note" style="margin:8px 0 0">Forces use illustrative masses, friction and efficiencies. Replace them with the manufacturer's data for a real gate.</p></div>
+    <div class="panel flow"><h3>Flow at the gate</h3><p class="regime" id="regime"></p><dl id="flow"></dl></div>
+  </div>
+  <div class="panel" style="margin-top:18px"><h3>How the gate is moved</h3><ol class="chain" id="chain"></ol></div>
+</section>
+
+<section>
+  <h2>Levels over the flood</h2>
+  <canvas id="chart" width="1100" height="200" aria-label="Levels and gate position over time"></canvas>
   <div class="legend" id="legend"></div>
 </section>
 
@@ -87,21 +104,22 @@
 
 <script src="gate-types.js"></script>
 <script>
-(function(){
+(function () {
   const GT = window.GateTypes, $ = id => document.getElementById(id);
   const ids = Object.keys(GT.TYPES);
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let type = ids[0], m, timer = null;
 
-  // ---------- controls ----------
-  ids.forEach((id, i) => { const b = document.createElement('button'); b.role = 'tab'; b.id = 'tab-' + id; b.textContent = GT.TYPES[id].name; b.setAttribute('aria-selected', i === 0); b.onclick = () => selectType(id); $('tabs').appendChild(b); });
+  // ---------------- controls ----------------
+  ids.forEach((id, i) => { const b = document.createElement('button'); b.setAttribute('role', 'tab'); b.id = 'tab-' + id; b.textContent = GT.TYPES[id].name; b.setAttribute('aria-selected', i === 0); b.onclick = () => selectType(id); $('tabs').appendChild(b); });
   $('tabs').addEventListener('keydown', e => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; const n = ids[(ids.indexOf(type) + d + ids.length) % ids.length]; selectType(n); $('tab-' + n).focus(); });
   for (const s of Object.keys(GT.SCENARIOS)) $('scenario').add(new Option(s));
   for (const c of Object.keys(GT.CONDITIONS)) $('condition').add(new Option(c));
   $('scenario').onchange = $('condition').onchange = () => { reset(); compare(); };
+  $('labels').onchange = () => $('scene').classList.toggle('nolabels', !$('labels').checked);
   $('reset').onclick = reset;
-  $('step').onclick = () => { stop(); for (let i = 0; i < 60 && m.t < 7200; i++) GT.step(m); draw(); };
+  $('step').onclick = () => { stop(); for (let i = 0; i < 60 && m.t < 7200; i++) GT.step(m); update(); };
   $('run').onclick = () => timer ? stop() : start();
-
   function selectType(id) {
     type = id;
     ids.forEach(x => { const b = $('tab-' + x); b.setAttribute('aria-selected', x === id); b.tabIndex = x === id ? 0 : -1; });
@@ -110,81 +128,417 @@
     $('tPower').textContent = id === 'float' ? 'No' : id === 'flap' ? 'The flap does not; the penstock and pump do' : 'Yes, for the hoist';
     reset();
   }
-  function start() { timer = setInterval(() => { const n = +$('speed').value / 10; for (let i = 0; i < n && m.t < 7200; i++) GT.step(m); draw(); if (m.t >= 7200) stop(); }, 100); $('run').textContent = 'Pause'; }
+  function start() { timer = setInterval(() => { const n = +$('speed').value / 10; for (let i = 0; i < n && m.t < 7200; i++) GT.step(m); update(); if (m.t >= 7200) stop(); }, 100); $('run').textContent = 'Pause'; }
   function stop() { clearInterval(timer); timer = null; $('run').textContent = 'Run'; }
-  function reset() { stop(); m = GT.create(type, $('scenario').value, $('condition').value); $('caseNote').textContent = GT.SCENARIOS[$('scenario').value].note + ' ' + GT.CONDITIONS[$('condition').value]; draw(); }
+  function reset() { stop(); m = GT.create(type, $('scenario').value, $('condition').value); $('caseNote').textContent = GT.SCENARIOS[$('scenario').value].note + ' ' + GT.CONDITIONS[$('condition').value]; seedParticles(); update(); }
 
-  // ---------- drawing ----------
+  // ---------------- SVG helpers ----------------
   const NS = 'http://www.w3.org/2000/svg';
-  function el(tag, attrs, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; }
-  const Y = h => 250 - h * 70; // 0 m at y=250, 3 m at y=40
-  function scene() {
-    const svg = $('scene'); svg.textContent = '';
-    const T = m.T, L = m.last, gx = 280;
-    svg.append(el('rect', { x: 0, y: 250, width: 560, height: 50, fill: '#b7a98a' }));
-    // banks
-    svg.append(el('line', { x1: 10, y1: Y(T.up.top), x2: 240, y2: Y(T.up.top), stroke: '#8c7f63', 'stroke-dasharray': '5 4' }));
-    svg.append(el('text', { x: 12, y: Y(T.up.top) - 6 }, T.up.label + ' bank ' + T.up.top.toFixed(1) + ' m'));
-    const dnTop = T.dn.area === Infinity ? T.dn.top : T.dn.top;
-    svg.append(el('line', { x1: 320, y1: Y(dnTop), x2: 550, y2: Y(dnTop), stroke: '#8c7f63', 'stroke-dasharray': '5 4' }));
-    svg.append(el('text', { x: 548, y: Y(dnTop) - 6, 'text-anchor': 'end' }, T.dn.label + ' bank ' + dnTop.toFixed(1) + ' m'));
-    // water
-    svg.append(el('rect', { x: 0, y: Y(L.h1), width: gx - 6, height: Math.max(0, 250 - Y(L.h1)), fill: '#4ba4b2', opacity: .85 }));
-    svg.append(el('rect', { x: gx + 6, y: Y(L.h2), width: 560 - gx - 6, height: Math.max(0, 250 - Y(L.h2)), fill: '#4ba4b2', opacity: .7 }));
-    svg.append(el('text', { x: 14, y: 270, fill: '#fff' }, T.up.label + ' ' + L.h1.toFixed(2) + ' m'));
-    svg.append(el('text', { x: 546, y: 270, 'text-anchor': 'end' }, T.dn.label + ' ' + L.h2.toFixed(2) + ' m'));
-    // gate structure by type
-    const steel = '#56656b';
-    if (m.typeId === 'vertical' || m.typeId === 'float') {
-      const lift = L.pos / 100 * T.amax;
-      svg.append(el('rect', { x: gx - 10, y: 30, width: 20, height: 8, fill: steel }));
-      svg.append(el('rect', { x: gx - 7, y: Y(lift + 2.6), width: 14, height: 2.6 * 70, fill: steel }));
-      svg.append(el('line', { x1: gx, y1: 38, x2: gx, y2: Y(lift + 2.6), stroke: steel, 'stroke-width': 3 }));
-      if (m.typeId === 'float') {
-        const fy = Y(Math.max(L.h1, 0.2)) - 8;
-        svg.append(el('line', { x1: gx, y1: 60, x2: 200, y2: 60, stroke: steel, 'stroke-width': 3 }));
-        svg.append(el('line', { x1: 200, y1: 60, x2: 200, y2: fy, stroke: steel, 'stroke-width': 2 }));
-        svg.append(el('rect', { x: 186, y: fy, width: 28, height: 14, rx: 6, fill: '#e9c46a', stroke: '#9b7a2b' }));
-        svg.append(el('text', { x: 200, y: fy - 6, 'text-anchor': 'middle' }, 'Float'));
-      }
-    } else if (m.typeId === 'radial') {
-      const a = L.pos / 100 * T.amax, px = gx + 90, py = Y(2.6), r = Math.hypot(px - gx, py - Y(0));
-      const ang0 = Math.atan2(Y(a) - py, gx - px), span = 0.55;
-      const p1 = [px + r * Math.cos(ang0), py + r * Math.sin(ang0)], p2 = [px + r * Math.cos(ang0 - span), py + r * Math.sin(ang0 - span)];
-      svg.append(el('path', { d: `M${p1[0]} ${p1[1]} A${r} ${r} 0 0 1 ${p2[0]} ${p2[1]}`, stroke: steel, 'stroke-width': 7, fill: 'none' }));
-      svg.append(el('line', { x1: px, y1: py, x2: p1[0], y2: p1[1], stroke: steel, 'stroke-width': 3 }));
-      svg.append(el('line', { x1: px, y1: py, x2: p2[0], y2: p2[1], stroke: steel, 'stroke-width': 3 }));
-      svg.append(el('circle', { cx: px, cy: py, r: 6, fill: steel }));
-      svg.append(el('text', { x: px + 10, y: py - 8 }, 'Trunnion'));
-    } else if (m.typeId === 'crest') {
-      const z = L.pos, hingeY = Y(T.zmin - 0.2), topY = Y(z), len = hingeY - Y(T.zmax);
-      const dy = hingeY - topY, dx = Math.sqrt(Math.max(0, len * len - dy * dy));
-      svg.append(el('rect', { x: gx - 20, y: hingeY, width: 40, height: 250 - hingeY, fill: '#a89a7b' }));
-      svg.append(el('line', { x1: gx - 8, y1: hingeY, x2: gx - 8 + dx, y2: topY, stroke: steel, 'stroke-width': 8, 'stroke-linecap': 'round' }));
-      svg.append(el('circle', { cx: gx - 8, cy: hingeY, r: 5, fill: '#333' }));
-      svg.append(el('text', { x: gx + 26, y: topY - 6 }, 'Crest ' + z.toFixed(2) + ' m'));
-    } else if (m.typeId === 'flap') {
-      const open = Math.max(0, Math.min(1, (L.h1 - L.h2) / 0.15)) * (L.h1 - L.h2 > T.flapHead ? 1 : 0);
-      svg.append(el('rect', { x: gx - 60, y: Y(T.amax) - 4, width: 66, height: Y(0) - Y(T.amax) + 4, fill: 'none', stroke: '#7c8b90', 'stroke-width': 2 }));
-      const hy = Y(T.amax), ang = open * 1.0;
-      svg.append(el('line', { x1: gx + 6, y1: hy, x2: gx + 6 + Math.sin(ang) * T.amax * 70, y2: hy + Math.cos(ang) * T.amax * 70, stroke: steel, 'stroke-width': 7, 'stroke-linecap': 'round' }));
-      svg.append(el('circle', { cx: gx + 6, cy: hy, r: 4, fill: '#333' }));
-      svg.append(el('text', { x: gx + 14, y: hy - 8 }, 'Flap'));
-      const pen = L.pen / 100 * T.amax;
-      svg.append(el('rect', { x: gx - 46, y: Y(pen + 1.4), width: 10, height: 1.4 * 70, fill: steel }));
-      svg.append(el('text', { x: gx - 41, y: Y(pen + 1.4) - 6, 'text-anchor': 'middle' }, 'Penstock'));
-      svg.append(el('circle', { cx: 120, cy: 70, r: 14, fill: L.pump ? '#2f8394' : '#9aa9ad' }));
-      svg.append(el('path', { d: 'M120 84V' + (Y(0.2)) + 'M134 70H' + (gx + 60), stroke: L.pump ? '#2f8394' : '#9aa9ad', 'stroke-width': 4, fill: 'none' }));
-      svg.append(el('text', { x: 120, y: 48, 'text-anchor': 'middle' }, L.pump ? 'Pump running' : 'Pump off'));
+  const S = 100, BED = 400, GX = 470;            // 100 px per metre, bed (0 m) at y=400, gate face at x=470
+  const Y = h => BED - h * S;
+  let layer;                                        // current group being drawn into
+  function el(tag, a, txt) { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; (a.parent || layer).appendChild(e); if (a.parent) e.removeAttribute('parent'); return e; }
+  const R = (x, y, w, h, fill, extra) => el('rect', Object.assign({ x, y, width: w, height: h, fill }, extra || {}));
+  const Ln = (x1, y1, x2, y2, stroke, w, extra) => el('line', Object.assign({ x1, y1, x2, y2, stroke, 'stroke-width': w || 2 }, extra || {}));
+  const Pth = (d, fill, stroke, w, extra) => el('path', Object.assign({ d, fill: fill || 'none', stroke: stroke || 'none', 'stroke-width': w || 1 }, extra || {}));
+  const C = (cx, cy, r, fill, extra) => el('circle', Object.assign({ cx, cy, r, fill }, extra || {}));
+  const Tx = (x, y, s, cls, anchor) => el('text', { x, y, class: cls || '', 'text-anchor': anchor || 'start' }, s);
+  // A label with a leader line from the part (px,py) to the text (tx,ty).
+  function callout(px, py, tx, ty, title, sub) {
+    const g = el('g', { class: 'callout' }), prev = layer; layer = g;
+    C(px, py, 2.6, '#123843');
+    Ln(px, py, tx, ty, '#123843', 1, { opacity: .7 });
+    // near the left edge, text reads rightwards from tx and the leader stops at its end
+    const right = tx >= px, edge = !right && tx < 230, w = Math.max(title.length * 6.6, (sub || '').length * 5.6) + 8;
+    if (edge) { g.lastChild.setAttribute('x2', tx + w); }
+    const x0 = edge ? tx : tx + (right ? 4 : -4), anc = edge || right ? 'start' : 'end';
+    Tx(x0, ty + 4, title, 'lbl', anc);
+    if (sub) Tx(x0, ty + 18, sub, 'lbl-s', anc);
+    layer = prev;
+  }
+  const CONC = '#c9c6bd', CONC_D = '#aeaa9f', STEEL = '#5b6b72', STEEL_D = '#3e4b51', SEAL = '#1f1f1f', WATER = '#4ba4b2', WATER_D = '#3a8fa0';
+  const hatch = () => el('defs', {}).innerHTML = '<pattern id="soil" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#cbbd9c"/><line x1="0" y1="0" x2="0" y2="10" stroke="#b5a681" stroke-width="3"/></pattern><pattern id="conc" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#cfccc3"/><circle cx="3" cy="4" r="1" fill="#b4b0a4"/><circle cx="10" cy="9" r="1.3" fill="#b9b5aa"/><circle cx="6" cy="12" r=".8" fill="#aaa699"/></pattern><linearGradient id="wat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb3c0" stop-opacity=".9"/><stop offset="1" stop-color="#2f7f91" stop-opacity=".95"/></linearGradient><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#123843"/></marker><marker id="arrR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b03a2e"/></marker>';
+
+  // ---------------- water surface geometry (shared by drawing and particles) ----------------
+  // Returns {bot(x), top(x)} in metres for the water body the particles travel through, for forward flow.
+  function channel() {
+    const T = m.T, L = m.last, f = GT.flowAtGate(m), up = L.h1, dn = L.h2, id = m.typeId;
+    const lerp = (a, b, t) => a + (b - a) * Math.min(1, Math.max(0, t));
+    if (id === 'crest') {
+      const z = L.pos, H = Math.max(0, up - z), tip = GX + 10;
+      return {
+        bot: x => x < tip - 160 ? 0 : x < tip ? lerp(0, z, (x - tip + 160) / 160) : x < tip + 90 ? (f.free ? lerp(z, dn, Math.pow((x - tip) / 90, 1.6)) : lerp(z, dn, (x - tip) / 90) * 0 + Math.min(z, dn) * 0) : 0,
+        top: x => x < tip - 160 ? up : x < tip ? lerp(up, z + Math.max(0.03, f.depth), (x - tip + 160) / 160) : x < tip + 90 ? (f.free ? lerp(z + Math.max(0.03, f.depth), dn, Math.pow((x - tip) / 90, 1.3)) : lerp(z + f.depth, dn, (x - tip) / 90)) : dn,
+        gateX: tip
+      };
     }
-    // flow arrow
-    if (Math.abs(L.q) > 0.02) {
-      const dir = Math.sign(L.q), y = Y(Math.min(L.h1, L.h2) / 2);
-      svg.append(el('path', { d: dir > 0 ? `M${gx + 20} ${y}h40l-8 -6m8 6l-8 6` : `M${gx - 20} ${y}h-40l8 -6m-8 6l8 6`, stroke: dir > 0 ? '#0b5563' : '#b03a2e', 'stroke-width': 3, fill: 'none' }));
-      svg.append(el('text', { x: dir > 0 ? gx + 24 : gx - 64, y: y - 10, fill: dir > 0 ? '#0b5563' : '#b03a2e' }, Math.abs(L.q).toFixed(2) + ' m³/s' + (dir < 0 ? ' back' : '')));
+    const a = Math.max(0.0, L.open), gx = id === 'flap' ? GX + 40 : id === 'radial' ? radialLipX(a) : GX + 12;
+    const yc = f.free ? Math.max(0.02, a * 0.61) : a;
+    return {
+      bot: () => 0,
+      top: x => x < gx - 170 ? up : x < gx ? lerp(up, Math.max(0.02, Math.min(a, up)), Math.pow((x - gx + 170) / 170, 2.2)) : x < gx + 70 ? (f.free ? lerp(Math.min(a, up), yc, (x - gx) / 25) : Math.min(a, up)) : x < gx + 200 ? lerp(f.free ? yc : Math.min(a, up), dn, (x - gx - 70) / 130) : dn,
+      gateX: gx
+    };
+  }
+
+  function radialLipX(a) { const M = GT.MECH.radial, th = M.trunnionH, tx = GX + Math.sqrt(M.R * M.R - th * th) * S; return tx - Math.cos(Math.asin(Math.min(1, (th - a) / M.R))) * M.R * S; }
+  function radialArcX(h) { const M = GT.MECH.radial, th = M.trunnionH, tx = GX + Math.sqrt(M.R * M.R - th * th) * S; return tx - Math.sqrt(Math.max(0, M.R * M.R - (th - h) * (th - h))) * S; }
+  // ---------------- particles ----------------
+  let parts = [], lastFrame = 0;
+  function seedParticles() { parts = []; for (let i = 0; i < 140; i++) parts.push({ x: Math.random() * 1000, k: 0.06 + Math.random() * 0.88, pump: i < 18 }); }
+  function animate(ts) {
+    const dt = Math.min(0.05, (ts - lastFrame) / 1000 || 0); lastFrame = ts;
+    if (m && !reduceMotion) moveParticles(dt);
+    requestAnimationFrame(animate);
+  }
+  function moveParticles(dt) {
+    const g = $('pg'); if (!g) return;
+    const L = m.last, q = L.q, T = m.T, ch = channel(), unit = Math.abs(q) / T.b, dir = Math.sign(q);
+    const pumpOn = L.pump && L.qp > 0;
+    let html = '';
+    for (const p of parts) {
+      if (p.pump) {
+        if (!pumpOn) continue;
+        p.x += dt * 0.35; if (p.x > 1) p.x -= 1;
+        const pt = pumpPath(p.x); html += `<circle cx="${pt[0].toFixed(1)}" cy="${pt[1].toFixed(1)}" r="2.4" fill="#e9f7fa"/>`;
+        continue;
+      }
+      if (Math.abs(q) < 0.002) { // still water: show a slow drift so the water reads as water
+        const top = p.x < ch.gateX ? L.h1 : L.h2; if (top < 0.03) continue;
+        html += `<circle cx="${p.x.toFixed(1)}" cy="${Y(p.k * top * 0.95).toFixed(1)}" r="1.6" fill="#ffffff" opacity=".35"/>`; continue;
+      }
+      // forward flow uses the channel as computed; reverse flow runs the same body backwards with mirrored speeds
+      const top = ch.top(p.x), bot = ch.bot(p.x), depth = Math.max(0.02, top - bot);
+      const u = unit / depth;                                   // m/s local mean velocity
+      const px = Math.min(320, 14 + 55 * u) * dt * dir;           // visual speed, monotonic in u
+      p.x += px;
+      if (p.x > 1000) { p.x = 0; p.k = 0.06 + Math.random() * 0.88; }
+      if (p.x < 0) { p.x = 1000; p.k = 0.06 + Math.random() * 0.88; }
+      const t2 = ch.top(p.x), b2 = ch.bot(p.x);
+      if (t2 - b2 < 0.015) continue;
+      const fast = u > 1.5;
+      html += `<circle cx="${p.x.toFixed(1)}" cy="${Y(b2 + p.k * (t2 - b2)).toFixed(1)}" r="${fast ? 2.2 : 1.8}" fill="${dir < 0 ? '#ffd9d3' : '#ffffff'}" opacity="${fast ? .95 : .7}"/>`;
+    }
+    g.innerHTML = html;
+  }
+  let pumpPath = () => [0, 0];
+
+  // ---------------- drawing ----------------
+  function scene() {
+    const svg = $('scene'); svg.textContent = ''; layer = svg; hatch();
+    const T = m.T, L = m.last, id = m.typeId, f = GT.flowAtGate(m), ch = channel();
+    // ground
+    R(0, BED, 1000, 100, 'url(#soil)');
+    // water bodies traced from the channel geometry
+    // the drawn surface: flat pool up to the gate, then the jet and jump (free) or a flat tailwater (submerged)
+    const surf = x => x < ch.gateX ? L.h1 : (id === 'crest' || (f.free && f.dir === 'forward')) ? ch.top(x) : L.h2;
+    const pts = []; for (let x = 0; x <= 1000; x += 5) pts.push([x, Y(surf(x))]);
+    const bots = []; for (let x = 1000; x >= 0; x -= 5) bots.push([x, Y(ch.bot(x))]);
+    const waterG = el('g', {});
+    // split at the gate so the leaf can sit between the two bodies
+    el('path', { parent: waterG, d: 'M' + pts.map(p => p.join(' ')).join('L') + 'L' + bots.map(p => p.join(' ')).join('L') + 'Z', fill: 'url(#wat)' });
+    if (id === 'crest') { // water behind the leaf, below the crest, upstream side
+      el('rect', { parent: waterG, x: 0, y: Y(L.h1), width: GX - 40, height: Math.max(0, BED - Y(L.h1)), fill: 'url(#wat)' });
+      el('rect', { parent: waterG, x: GX + 90, y: Y(L.h2), width: 1000 - GX - 90, height: Math.max(0, BED - Y(L.h2)), fill: 'url(#wat)' });
+    }
+    if (id !== 'crest' && f.dir === 'none') { // gate shut or no head: draw both pools flat
+      el('rect', { parent: waterG, x: 0, y: Y(L.h1), width: GX + 6, height: Math.max(0, BED - Y(L.h1)), fill: 'url(#wat)' });
+      el('rect', { parent: waterG, x: GX + 30, y: Y(L.h2), width: 1000 - GX - 30, height: Math.max(0, BED - Y(L.h2)), fill: 'url(#wat)' });
+    }
+    // hydraulic jump hint for free flow under a gate
+    if (id !== 'crest' && f.free && f.dir === 'forward' && f.velocity > 0.5) {
+      for (let i = 0; i < 6; i++) { const x = ch.gateX + 80 + i * 18, y = Y(ch.top(x)); Pth(`M${x} ${y}q6 -7 12 0`, 'none', '#e6f6f8', 1.5, { opacity: .9 }); }
+    }
+    // bank / top-of-bank markers
+    Ln(0, Y(T.up.top), GX - 50, Y(T.up.top), '#8c7f63', 1, { 'stroke-dasharray': '6 4' });
+    Tx(8, Y(T.up.top) - 6, T.up.label + ' bank ' + T.up.top.toFixed(1) + ' m', 'lbl-s');
+    if (T.dn.area !== Infinity) { Ln(GX + 140, Y(T.dn.top), 1000, Y(T.dn.top), '#8c7f63', 1, { 'stroke-dasharray': '6 4' }); Tx(992, Y(T.dn.top) - 6, T.dn.label + ' bank ' + T.dn.top.toFixed(1) + ' m', 'lbl-s', 'end'); }
+    // level boxes
+    Tx(10, 492, T.up.label + '  ' + L.h1.toFixed(2) + ' m', 'lbl'); Tx(990, 492, T.dn.label + '  ' + L.h2.toFixed(2) + ' m', 'lbl', 'end');
+    // datum scale
+    for (let h = 0; h <= 3.5; h += 0.5) { Ln(0, Y(h), 8, Y(h), '#6e7f84', 1); if (h % 1 === 0) Tx(11, Y(h) + 4, h + ' m', 'lbl-s'); }
+
+    ({ vertical: drawVertical, float: drawFloat, radial: drawRadial, flap: drawFlap, crest: drawCrest })[id](T, L, f);
+
+    // particle layer last so water motion reads over the water but under the steel callouts
+    el('g', { id: 'pg' });
+    // flow arrow + discharge
+    if (Math.abs(L.q) > 0.005) {
+      const fwd = L.q > 0, ax = ch.gateX + (fwd ? 230 : -250), ay = Y(Math.max(0.25, Math.min(L.h1, L.h2) * 0.5));
+      Ln(ax, ay, ax + (fwd ? 70 : -70), ay, fwd ? '#123843' : '#b03a2e', 2.5, { 'marker-end': fwd ? 'url(#arr)' : 'url(#arrR)' });
+      Tx(ax + (fwd ? 0 : -70), ay - 8, Math.abs(L.q).toFixed(2) + ' m³/s' + (fwd ? '' : ' reverse'), 'lbl');
     }
   }
 
+  // Shared parts for leaf-in-guide gates
+  function piersAndDeck(top) {
+    R(GX - 34, Y(top), 92, BED - Y(top), 'url(#conc)', { opacity: .55 });                 // pier seen behind the leaf
+    Ln(GX - 6, Y(top), GX - 6, BED, '#8b877b', 1.2, { 'stroke-dasharray': '4 3' });          // guide slot faces
+    Ln(GX + 30, Y(top), GX + 30, BED, '#8b877b', 1.2, { 'stroke-dasharray': '4 3' });
+    R(GX - 110, Y(top) - 16, 240, 16, CONC_D);                                                // hoist deck
+    for (let x = GX - 104; x < GX + 128; x += 22) Ln(x, Y(top) - 16, x, Y(top) - 40, '#6b777b', 1.5);
+    Ln(GX - 108, Y(top) - 40, GX + 128, Y(top) - 40, '#6b777b', 2);                           // handrail
+    R(GX - 60, BED - 6, 130, 12, STEEL_D);                                                     // embedded sill beam
+    R(GX - 160, BED, 340, 18, 'url(#conc)');                                                  // floor slab
+  }
+  function leaf(a, H, x, w) {
+    const yb = Y(a), yt = Y(a + H);
+    R(x, yt, w, yb - yt, STEEL, { stroke: STEEL_D, 'stroke-width': 1 });                     // skin plate (side view)
+    for (let i = 0; i < 5; i++) { const yy = yb - 14 - i * (yb - yt - 24) / 4; R(x + w, yy - 6, 10, 12, STEEL_D); } // horizontal girders on the downstream face
+    R(x - 1, yb - 4, w + 2, 6, SEAL);                                                         // bottom rubber seal
+    return { yb, yt };
+  }
+  function sensorRadar(x, h, label) {
+    R(x - 30, 54, 4, 40, '#7a868a'); R(x - 30, 54, 36, 4, '#7a868a');
+    R(x - 6, 58, 18, 14, '#eef2f3', { stroke: '#4b5a5f' });
+    Ln(x + 3, 72, x + 3, Y(h), '#e08a3c', 1.2, { 'stroke-dasharray': '3 4' });
+    callout(x - 30, 60, x - 60, 20, label || 'Radar level sensor', m.last.sensorOk ? m.last.meas.toFixed(2) + ' m' : 'frozen at ' + m.last.meas.toFixed(2) + ' m');
+  }
+
+  function drawVertical(T, L) {
+    const top = 3.2, a = L.open, H = GT.MECH.vertical.plateH;
+    piersAndDeck(top);
+    const lf = leaf(a, H, GX, 22);
+    // headstock: gearbox, motor, handwheel, encoder, limit switches
+    const dy = Y(top) - 16, gbx = GX - 22;
+    R(gbx, dy - 46, 66, 46, '#7d8b91', { stroke: STEEL_D, rx: 3 });                          // gearbox + thrust nut
+    R(gbx + 66, dy - 38, 54, 30, L.moving ? '#2f7d8f' : '#6a7c82', { stroke: STEEL_D, rx: 8 }); // motor
+    for (let i = 0; i < 4; i++) Ln(gbx + 76 + i * 10, dy - 36, gbx + 76 + i * 10, dy - 10, '#55666b', 1);
+    C(gbx - 16, dy - 26, 15, 'none', { stroke: '#3e4b51', 'stroke-width': 3 }); Ln(gbx - 1, dy - 26, gbx, dy - 26, '#3e4b51', 3); // handwheel
+    R(gbx + 20, dy - 62, 22, 14, '#e8ecee', { stroke: STEEL_D });                            // encoder
+    // rising spindle: from leaf top through the gearbox, protruding above by the lift
+    const sx = GX + 11, sTop = dy - 52 - a * S;
+    Ln(sx, lf.yt, sx, sTop, '#4a565b', 7);
+    for (let y = sTop + 4; y < lf.yt - 2; y += 6) Ln(sx - 4, y, sx + 4, y + 3, '#2c363a', 1);
+    R(sx - 7, sTop - 6, 14, 6, '#4a565b');
+    // limit switches on the deck
+    R(GX + 46, dy - 14, 10, 14, L.pos >= 99.5 ? '#e0a33a' : '#9aa6aa'); R(GX - 70, dy - 14, 10, 14, L.pos <= 0.5 ? '#e0a33a' : '#9aa6aa');
+    sensorRadar(250, L.h1);
+    R(760, BED - 14, 16, 14, '#eef2f3', { stroke: '#4b5a5f' }); Ln(768, BED - 14, 768, BED - 34, '#4b5a5f', 1.5);
+    // labels
+    callout(gbx + 92, dy - 24, 690, 70, 'Electric motor', L.moving ? (L.moving > 0 ? 'raising' : 'lowering') : 'stopped');
+    callout(gbx + 30, dy - 30, 660, 108, 'Worm gearbox and thrust nut', 'turns the nut on the spindle');
+    callout(gbx - 16, dy - 26, 330, 112, 'Handwheel', 'manual override');
+    callout(gbx + 31, dy - 56, 330, 72, 'Position encoder', (a * 1000).toFixed(0) + ' mm open');
+    callout(sx, sTop + 10, 620, 34, 'Rising spindle', 'threaded stem lifts the leaf');
+    callout(GX + 51, dy - 7, 720, 140, 'Limit switches', 'stop travel at each end');
+    callout(GX + 4, (lf.yt + lf.yb) / 2, 300, 230, 'Skin plate', 'steel leaf facing the lake');
+    callout(GX + 30, lf.yb - 20, 640, 220, 'Horizontal girders', 'carry water load to the guides');
+    callout(GX + 10, lf.yb, 330, 330, 'Bottom seal', 'rubber, seats on the sill beam');
+    callout(GX + 30, Y(0.4), 660, 300, 'Guide slot in pier', 'side seals and slides');
+    callout(GX + 60, BED, 660, 360, 'Sill beam', 'embedded steel');
+    callout(768, BED - 10, 860, 344, 'Pressure transducer', 'drain level ' + L.h2.toFixed(2) + ' m');
+  }
+
+  function drawFloat(T, L) {
+    const top = 3.2, a = L.open, H = GT.MECH.float.plateH;
+    piersAndDeck(top);
+    const lf = leaf(a, H, GX, 22), dy = Y(top) - 16;
+    // stilling well on the lake side, connected by an inlet pipe at the bed
+    const wx = 250, ww = 70;
+    R(wx - 6, Y(3.0), 6, BED - Y(3.0), '#8e9a9e'); R(wx + ww, Y(3.0), 6, BED - Y(3.0), '#8e9a9e');
+    R(wx, Y(L.h1), ww, BED - Y(L.h1), WATER_D, { opacity: .8 });
+    R(wx - 40, BED - 16, 46, 12, '#8e9a9e');
+    const fd = GT.MECH.float, sub = Math.min(fd.floatH, Math.max(0, L.h1 - (T.setpoint - 0.5)));
+    const fTop = Y(L.h1 - sub + fd.floatH) , fBot = Y(L.h1 - sub);
+    R(wx + 8, fTop, ww - 16, fBot - fTop, '#e9c46a', { stroke: '#9b7a2b', rx: 8 });
+    // pulleys and chain: float → pulley over the well → pulley over the gate → leaf
+    const p1 = [wx + ww / 2, Y(3.65)], p2 = [GX + 11, Y(3.65)];
+    Ln(p1[0], fTop, p1[0], p1[1] + 12, '#3e4b51', 2.5);
+    Ln(p1[0], p1[1] - 12, p2[0], p2[1] - 12, '#3e4b51', 2.5);
+    Ln(p2[0], p2[1] + 12, p2[0], lf.yt, '#3e4b51', 2.5);
+    C(p1[0], p1[1], 12, '#d6dadc', { stroke: STEEL_D, 'stroke-width': 3 }); C(p2[0], p2[1], 12, '#d6dadc', { stroke: STEEL_D, 'stroke-width': 3 });
+    R(p1[0] - 4, p1[1], 8, Y(3.0) - p1[1], '#8e9a9e'); R(p2[0] - 4, p2[1], 8, dy - p2[1], '#8e9a9e');
+    // counterweight hanging downstream of the gate on its own chain
+    const cwY = Y(1.6) + a * S * 0.8;
+    Ln(p2[0] + 12, p2[1], GX + 90, p2[1], '#3e4b51', 2.5); C(GX + 90, p2[1] + 0, 8, '#d6dadc', { stroke: STEEL_D, 'stroke-width': 2 });
+    Ln(GX + 98, p2[1], GX + 98, cwY, '#3e4b51', 2.5);
+    R(GX + 82, cwY, 32, 40, '#6a6f73', { stroke: '#3e4246' });
+    callout(wx + 10, (fTop + fBot) / 2, 20, 200, 'Float', sub.toFixed(2) + ' m submerged');
+    callout(wx - 4, Y(2.6), 20, 100, 'Stilling well', 'calms waves for the float');
+    callout(wx - 20, BED - 10, 20, 340, 'Inlet pipe', 'well connected to the lake');
+    callout(p1[0] - 10, p1[1], 20, 30, 'Pulley', '');
+    callout((p1[0] + p2[0]) / 2, p1[1] - 12, 420, 28, 'Chain', 'float force lifts the leaf');
+    callout(GX + 98, cwY + 20, 700, 250, 'Counterweight', 'balances the leaf at 1.5 m');
+    callout(GX + 4, (lf.yt + lf.yb) / 2, 640, 170, 'Gate leaf', (a * 1000).toFixed(0) + ' mm open');
+    callout(GX + 10, lf.yb, 640, 330, 'Bottom seal', '');
+    callout(GX + 30, Y(0.4), 700, 300, 'Guide slot', '');
+    Tx(500, -60, 'No motor, sensor or power: the float, chain and counterweight move the gate directly.', 'lbl', 'middle');
+  }
+
+  function drawRadial(T, L) {
+    const M = GT.MECH.radial, r = M.R * S, th = M.trunnionH, tx = GX + Math.sqrt(M.R * M.R - th * th) * S, ty = Y(th);
+    { const lx = radialLipX(L.open), arc = []; for (let h = L.h1; h >= Math.max(L.open, 0); h -= 0.02) arc.push([radialArcX(h), Y(h)]); arc.push([lx, Y(L.open)]);
+      const dnTop = Math.max(L.h2, L.open); Pth('M' + arc.map(p => p.join(' ')).join('L') + 'L' + (GX + 8) + ' ' + Y(L.open) + 'L' + (GX + 8) + ' ' + Y(L.h1) + 'Z', '#eef5f6');
+      if (L.h2 > L.open) R(lx, Y(L.h2), GX + 8 - lx, Y(L.open) - Y(L.h2), 'url(#wat)'); }
+    // pier behind with the trunnion anchorage
+    Pth(`M${GX - 30} ${BED}V${Y(3.3)}H${tx + 40}V${ty + 60}L${tx - 60} ${BED}Z`, 'url(#conc)', CONC_D, 1, { opacity: .5 });
+    R(tx - 26, ty - 26, 52, 52, CONC_D, { opacity: .8 });
+    R(GX - 160, BED, 640, 18, 'url(#conc)'); R(GX - 30, BED - 6, 60, 12, STEEL_D);
+    // gate lip on the circle at height a
+    const a = L.open, lipAng = Math.asin(Math.min(1, (th - a) / M.R)), span = 0.78;
+    const P = ang => [tx - Math.cos(ang) * r, ty + Math.sin(ang) * r];   // ang measured below the horizontal, towards upstream
+    const lip = P(lipAng), topP = P(lipAng - span);
+    Pth(`M${lip[0]} ${lip[1]}A${r} ${r} 0 0 1 ${topP[0]} ${topP[1]}`, 'none', STEEL, 9);
+    for (let i = 0; i <= 6; i++) { const q = P(lipAng - span * i / 6); Ln(q[0], q[1], q[0] + (tx - q[0]) * 0.07, q[1] + (ty - q[1]) * 0.07, STEEL_D, 3); } // ribs
+    const armA = P(lipAng - span * 0.15), armB = P(lipAng - span * 0.85);
+    Ln(tx, ty, armA[0], armA[1], STEEL_D, 6); Ln(tx, ty, armB[0], armB[1], STEEL_D, 6);
+    Ln(armA[0] + (tx - armA[0]) * .45, armA[1] + (ty - armA[1]) * .45, armB[0] + (tx - armB[0]) * .45, armB[1] + (ty - armB[1]) * .45, STEEL_D, 3);
+    C(tx, ty, 9, '#2c363a'); C(tx, ty, 4, '#c9cfd2');
+    R(lip[0] - 2, lip[1] - 3, 8, 6, SEAL);
+    // hoist: winch on the deck above, wire rope down to the lip lug
+    const dX = GX - 40, dY = Y(4.0);
+    R(dX - 70, dY + 14, 200, 14, CONC_D);
+    R(dX - 10, dY - 18, 44, 30, '#7d8b91', { rx: 4 }); C(dX + 12, dY - 3, 13, '#d6dadc', { stroke: STEEL_D, 'stroke-width': 3 });
+    R(dX + 34, dY - 14, 46, 24, L.moving ? '#2f7d8f' : '#6a7c82', { rx: 7 });
+    Ln(dX + 12 - 13, dY - 3, lip[0] - 4, lip[1] - 2, '#2c363a', 1.8);
+    // thrust line through the trunnion
+    const mid = P(lipAng - span * 0.35);
+    Ln(mid[0] - 40 * Math.cos(lipAng - span * .35) * -1, mid[1], mid[0], mid[1], 'none');
+    Ln(mid[0] - 60, mid[1] + (ty - mid[1]) * -60 / (tx - mid[0]), tx, ty, '#e08a3c', 1.5, { 'stroke-dasharray': '6 5' });
+    sensorRadar(220, L.h1);
+    callout(topP[0] + 6, topP[1] + 14, 330, 140, 'Curved skin plate', 'part of a circle around the trunnion');
+    callout((tx + armB[0]) / 2, (ty + armB[1]) / 2, 610, 92, 'Radial arms', 'carry the load to the trunnion');
+    callout(tx, ty, 900, 112, 'Trunnion pin and bearing', '');
+    callout(tx + 20, ty + 22, 900, 190, 'Trunnion anchorage', 'girder cast into the pier');
+    callout(mid[0] + 40, mid[1] + (ty - mid[1]) * 40 / (tx - mid[0]), 820, 300, 'Water thrust line', 'passes through the pin');
+    callout(dX + 12, dY - 3, 230, -40, 'Winch drum and brake', L.moving ? (L.moving > 0 ? 'hauling in' : 'paying out') : 'brake on');
+    callout(dX + 57, dY - 2, 520, 30, 'Motor', '');
+    callout((dX + lip[0]) / 2, (dY + lip[1]) / 2, 330, 250, 'Wire rope', 'lifts the lip, ' + (a * 1000).toFixed(0) + ' mm open');
+    callout(lip[0] + 3, lip[1], 330, 350, 'Bottom seal on sill', '');
+  }
+
+  function drawFlap(T, L) {
+    const wTop = 3.0, a = T.amax, hx = GX + 40, hy = Y(a);
+    // headwall with culvert opening
+    R(GX - 10, Y(wTop), 50, Y(a) - Y(wTop), 'url(#conc)', { stroke: CONC_D });
+    R(GX - 10, BED, 50, 20, 'url(#conc)');
+    R(GX - 220, BED, 220, 18, 'url(#conc)');
+    // penstock on the upstream face, in a frame, with spindle to an actuator on top of the wall
+    const pa = L.pen / 100 * a, pH = a + 0.25;
+    R(GX - 28, Y(wTop), 4, BED - Y(wTop), '#8e9a9e'); R(GX - 12, Y(wTop), 4, BED - Y(wTop), '#8e9a9e');
+    R(GX - 24, Y(pa + pH), 12, pH * S, STEEL, { stroke: STEEL_D });
+    R(GX - 25, Y(pa) - 4, 14, 5, SEAL);
+    Ln(GX - 18, Y(pa + pH), GX - 18, Y(wTop) - 30 - pa * S * 0.5, '#4a565b', 5);
+    R(GX - 44, Y(wTop) - 40, 50, 26, L.penMoving ? '#2f7d8f' : '#6a7c82', { rx: 5 });
+    // flap leaf hinged at the top of the opening on the outlet face
+    const ang = L.flapFrac * GT.MECH.flap.maxAngle * Math.PI / 180, len = (a + 0.08) * S;
+    const fx = hx + Math.sin(ang) * len, fy = hy + Math.cos(ang) * len;
+    Ln(hx, hy, fx, fy, STEEL, 9, { 'stroke-linecap': 'round' });
+    R(hx - 3, BED - 6, 8, 6, SEAL);
+    C(hx, hy, 6, '#2c363a'); C(hx, hy, 2.5, '#c9cfd2');
+    R(hx - 6, hy - 18, 18, 12, '#7d8b91');
+    // sump, submersible pump and rising main over the wall with a non-return valve
+    const sx = 170, sy = BED + 70;
+    R(sx - 40, BED, 80, 70, '#3a8fa0', { opacity: .55 }); R(sx - 46, BED, 6, 76, CONC_D); R(sx + 40, BED, 6, 76, CONC_D); R(sx - 46, BED + 70, 92, 6, CONC_D);
+    R(sx - 16, sy - 40, 32, 34, L.pump ? '#2f7d8f' : '#6a7c82', { rx: 6 });
+    const pipe = [[sx, sy - 40], [sx, Y(3.3)], [GX + 70, Y(3.3)], [GX + 70, Y(L.h2 + 0.25)]];
+    Pth('M' + pipe.map(p => p.join(' ')).join('L'), 'none', '#596a70', 9, { 'stroke-linejoin': 'round' });
+    Pth('M' + pipe.map(p => p.join(' ')).join('L'), 'none', L.pump ? '#3a8fa0' : '#9aa6aa', 5, { 'stroke-linejoin': 'round' });
+    const nv = [GX + 20, Y(3.3)];
+    Pth(`M${nv[0] - 10} ${nv[1] - 9}L${nv[0] + 10} ${nv[1]}L${nv[0] - 10} ${nv[1] + 9}Z`, L.pump ? '#e8f3ea' : '#f1d6d1', '#3e4b51', 1.5);
+    pumpPath = t => { const segs = [], lens = []; let tot = 0; for (let i = 1; i < pipe.length; i++) { const l = Math.hypot(pipe[i][0] - pipe[i - 1][0], pipe[i][1] - pipe[i - 1][1]); lens.push(l); tot += l; } let d = t * tot; for (let i = 1; i < pipe.length; i++) { if (d <= lens[i - 1]) { const u = d / lens[i - 1]; return [pipe[i - 1][0] + (pipe[i][0] - pipe[i - 1][0]) * u, pipe[i - 1][1] + (pipe[i][1] - pipe[i - 1][1]) * u]; } d -= lens[i - 1]; } return pipe[pipe.length - 1]; };
+    R(300, BED - 12, 16, 12, '#eef2f3', { stroke: '#4b5a5f' });
+    callout((hx + fx) / 2, (hy + fy) / 2, 720, 300, 'Flap leaf', (L.flapFrac * GT.MECH.flap.maxAngle).toFixed(0) + '° open, moved by water alone');
+    callout(hx, hy, 720, 200, 'Hinge pins', 'leaf hangs from the top');
+    callout(hx + 1, BED - 4, 720, 370, 'Seating face and seal', '');
+    callout(GX - 18, Y(pa + pH / 2), 330, 220, 'Penstock leaf', L.pen.toFixed(0) + '% open, second barrier');
+    callout(GX - 19, Y(wTop) - 28, 330, 70, 'Penstock actuator', L.penMoving ? (L.penMoving > 0 ? 'opening' : 'closing') : 'holding');
+    callout(GX + 15, Y(1.8), 600, 140, 'Headwall', 'outfall into the valley drain');
+    callout(sx, sy - 24, 205, 300, 'Submersible pump', L.pump ? (L.qp * 1000).toFixed(0) + ' L/s' : 'off');
+    callout(sx, Y(2.0), 205, 150, 'Rising main', 'lifts trapped water over the wall');
+    callout(nv[0], nv[1], 600, 48, 'Non-return valve', L.pump ? 'open' : 'closed');
+    callout(sx + 40, BED + 50, 230, 455, 'Sump', 'collects water when the outfall is shut');
+    callout(308, BED - 8, 360, 330, 'Level transducer', L.meas.toFixed(2) + ' m');
+  }
+
+  function drawCrest(T, L) {
+    const M = GT.MECH.crest, hz = T.zmin - 0.2, hx = GX - 10, hy = Y(hz), z = L.pos;
+    // weir body
+    Pth(`M${GX - 120} ${BED}L${GX - 60} ${hy}H${GX + 40}L${GX + 90} ${BED}Z`, 'url(#conc)', CONC_D, 1);
+    R(GX - 220, BED, 440, 18, 'url(#conc)');
+    // leaf lying back from vertical by the angle that puts its tip at the crest level
+    const dy = (z - hz) * S, len = M.leafL * S, dx = Math.sqrt(Math.max(0, len * len - dy * dy));
+    const tip = [hx + dx, hy - dy];
+    Ln(hx, hy, tip[0], tip[1], STEEL, 10, { 'stroke-linecap': 'round' });
+    for (let i = 1; i < 5; i++) { const u = i / 5; R(hx + dx * u + 2, hy - dy * u - 3, 9, 6, STEEL_D, { transform: `rotate(${-Math.atan2(dy, dx) * 180 / Math.PI} ${hx + dx * u} ${hy - dy * u})` }); }
+    C(hx, hy, 7, '#2c363a'); C(hx, hy, 3, '#c9cfd2');
+    // hydraulic cylinder from a pit downstream to a lug at 40% of the leaf
+    const lug = [hx + dx * 0.45, hy - dy * 0.45], base = [GX + 70, Y(0.35)];
+    const vx = lug[0] - base[0], vy = lug[1] - base[1], l = Math.hypot(vx, vy), ux = vx / l, uy = vy / l;
+    Ln(base[0], base[1], base[0] + ux * l * 0.55, base[1] + uy * l * 0.55, '#7d8b91', 12);
+    Ln(base[0] + ux * l * 0.5, base[1] + uy * l * 0.5, lug[0], lug[1], '#c9cfd2', 5);
+    C(base[0], base[1], 5, '#2c363a'); C(lug[0], lug[1], 4, '#2c363a');
+    // nappe: free jet over the tip
+    const f = GT.flowAtGate(m);
+    if (f.dir === 'forward' && f.free) { // aeration pipe keeps air under the nappe
+      Pth(`M${GX + 110} ${BED - 4}V${Y(2.8)}`, 'none', '#7a868a', 4); C(GX + 110, Y(2.8), 4, '#7a868a');
+    }
+    // power pack on the bank
+    R(820, Y(2.9) - 30, 70, 30, '#6a7c82', { rx: 4 }); Pth(`M820 ${Y(2.9) - 15}H${base[0] + 30}V${base[1]}`, 'none', '#3e4b51', 1.5, { 'stroke-dasharray': '4 3' });
+    sensorRadar(240, L.h1);
+    callout((hx + tip[0]) / 2, (hy + tip[1]) / 2, 290, 210, 'Crest gate leaf', 'top edge at ' + z.toFixed(2) + ' m');
+    callout(hx, hy, 290, 330, 'Bottom hinge', 'leaf pivots on the weir crest');
+    callout((base[0] + lug[0]) / 2, (base[1] + lug[1]) / 2, 700, 330, 'Hydraulic cylinder', 'pushes the leaf up, lets it lie back');
+    callout(855, Y(2.9) - 15, 855, 50, 'Power pack', 'pump, valves, accumulator');
+    callout(tip[0] + 4, tip[1] - 4, 700, 150, 'Nappe', f.dir === 'forward' ? 'water spilling over the top' : 'no overflow');
+    if (f.dir === 'forward' && f.free) callout(GX + 110, Y(2.4), 900, 230, 'Aeration pipe', 'air under the nappe');
+    callout(GX, BED - 20, 290, 390, 'Weir body', 'concrete');
+  }
+
+  // ---------------- panels ----------------
+  function panels() {
+    const r = GT.mechanics(m), L = m.last, T = m.T, f = r.flow;
+    $('mech').innerHTML = r.parts.map(p => `<tr class="${p.state}"><td>${p.name}<br><span class="note">${p.note}</span></td><td class="v">${p.value}</td></tr>`).join('');
+    $('regime').textContent = f.regime;
+    const rows = [['Head across the gate', f.head.toFixed(2) + ' m']];
+    if (m.typeId === 'crest') rows.push(['Head over the crest', f.head.toFixed(2) + ' m'], ['Depth at the crest (critical)', f.depth.toFixed(3) + ' m']);
+    else rows.push(['Gate opening', (f.opening * 1000).toFixed(0) + ' mm'], ['Contracted jet depth', f.dir === 'none' ? '–' : (f.depth * 1000).toFixed(0) + ' mm (0.61 × opening)']);
+    rows.push(['Velocity through the gate', f.velocity.toFixed(2) + ' m/s'], ['Flow per metre width', f.unitQ.toFixed(2) + ' m³/s/m'], ['Total discharge', Math.abs(L.q).toFixed(3) + ' m³/s']);
+    if (f.free && f.dir === 'forward' && m.typeId !== 'crest') rows.push(['Froude number at the jet', f.froude.toFixed(2) + (f.froude > 1 ? ' (supercritical: a jump forms downstream)' : '')]);
+    if (L.qp > 0) rows.push(['Pumped', (L.qp * 1000).toFixed(0) + ' L/s']);
+    $('flow').innerHTML = rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
+    $('chain').innerHTML = chain(r).map(c => `<li class="${c.s || ''}"><b>${c.n}</b><span>${c.d}</span><em>${c.v}</em></li>`).join('');
+  }
+  function chain(r) {
+    const L = m.last, T = m.T, cond = m.condition, after = m.t >= GT.FAULT_AT;
+    const power = !(cond === 'Power cut' && after), jam = cond === 'Gate jam' && after;
+    const mv = L.moving > 0 ? 'Raising' : L.moving < 0 ? 'Lowering' : 'Stopped';
+    const sensor = { n: m.typeId === 'flap' ? 'Level sensors' : 'Level sensor', d: m.typeId === 'flap' ? 'Drain and river levels' : 'Measures the upstream level', v: L.sensorOk ? L.meas.toFixed(2) + ' m' : 'Frozen: fault raised', s: L.sensorOk ? '' : 'bad' };
+    const plc = (target) => ({ n: 'PLC', d: 'Compares the level with its setpoints', v: !L.sensorOk || !power ? 'Holding' : target, s: !L.sensorOk || !power ? 'bad' : '' });
+    if (m.typeId === 'vertical') return [sensor, plc('Target ' + L.target.toFixed(0) + '%'),
+      { n: 'Motor starter', d: 'Switches the motor forward or reverse', v: !power ? 'No power' : mv === 'Stopped' ? 'Open' : mv === 'Raising' ? 'Forward' : 'Reverse', s: power ? (mv === 'Stopped' ? 'idle' : '') : 'bad' },
+      { n: 'Motor and worm gearbox', d: 'Turns the thrust nut', v: jam ? 'Stalled' : mv, s: jam ? 'bad' : mv === 'Stopped' ? 'idle' : '' },
+      { n: 'Rising spindle', d: 'Converts rotation to lift', v: (L.open * 1000).toFixed(0) + ' mm', s: '' },
+      { n: 'Gate leaf', d: 'Sets the opening under it', v: L.pos.toFixed(0) + '% open', s: jam ? 'bad' : '' },
+      { n: 'Encoder and limits', d: 'Report the position back to the PLC', v: L.pos <= 0.5 ? 'Closed limit' : L.pos >= 99.5 ? 'Open limit' : 'Mid-travel', s: '' }];
+    if (m.typeId === 'radial') return [sensor, plc('PI target ' + L.target.toFixed(0) + '%'),
+      { n: 'Winch starter and brake', d: 'Releases the brake and runs the winch', v: !power ? 'No power, brake on' : mv === 'Stopped' ? 'Brake on' : 'Running', s: power ? (mv === 'Stopped' ? 'idle' : '') : 'bad' },
+      { n: 'Winch drum', d: 'Hauls in or pays out the ropes', v: jam ? 'Stalled' : mv, s: jam ? 'bad' : mv === 'Stopped' ? 'idle' : '' },
+      { n: 'Wire ropes', d: 'Lift the lip; the gate pivots on the trunnion', v: 'Pull ' + (r.hoist / 1000).toFixed(1) + ' kN' },
+      { n: 'Radial gate', d: 'Sets the opening under the lip', v: L.pos.toFixed(0) + '% open', s: jam ? 'bad' : '' },
+      { n: 'Angle encoder', d: 'Reports the gate angle back', v: (L.open * 1000).toFixed(0) + ' mm' }];
+    if (m.typeId === 'flap') return [
+      { n: 'Water pressure', d: 'Drain level against river level', v: (L.h1 - L.h2 >= 0 ? '+' : '') + ((L.h1 - L.h2) * 100).toFixed(0) + ' cm' },
+      { n: 'Flap gate', d: 'Opens and closes by itself', v: (L.flapFrac * 60).toFixed(0) + '° open', s: cond === 'Debris' ? 'bad' : '' },
+      sensor, plc(L.target === 0 ? 'Close penstock' : 'Keep penstock open'),
+      { n: 'Penstock actuator', d: 'Second barrier behind the flap', v: !power ? 'No power' : jam ? 'Jammed' : L.pen.toFixed(0) + '% open', s: !power || jam ? 'bad' : '' },
+      { n: 'Pump starter', d: 'Runs when the outfall is shut and the drain is high', v: !power ? 'No power' : L.pump ? 'Running' : 'Off', s: !power ? 'bad' : L.pump ? '' : 'idle' },
+      { n: 'Pump and non-return valve', d: 'Lift trapped water over the wall', v: L.pump ? (L.qp * 1000).toFixed(0) + ' L/s' : 'Valve closed', s: L.pump ? '' : 'idle' }];
+    if (m.typeId === 'crest') return [sensor, plc('Target crest ' + L.target.toFixed(2) + ' m'),
+      { n: 'Power pack', d: 'Pump and directional valves', v: !power ? 'No power' : mv === 'Stopped' ? 'Holding' : 'Running', s: power ? (mv === 'Stopped' ? 'idle' : '') : 'bad' },
+      { n: 'Hydraulic cylinder', d: 'Raises or lowers the leaf', v: jam ? 'Locked' : (r.cylinder / 1000).toFixed(1) + ' kN', s: jam ? 'bad' : '' },
+      { n: 'Crest leaf', d: 'Its top edge sets the spill level', v: L.pos.toFixed(2) + ' m', s: jam ? 'bad' : '' },
+      { n: 'Position transducer', d: 'Cylinder stroke reported back', v: mv }];
+    return [
+      { n: 'Lake level', d: 'Enters the stilling well through the inlet pipe', v: L.h1.toFixed(2) + ' m' },
+      { n: 'Float', d: 'Buoyancy rises with the level', v: (r.buoyancy / 1000).toFixed(1) + ' kN' },
+      { n: 'Chain and pulleys', d: 'Carry the float force to the leaf', v: 'Net ' + ((r.buoyancy - r.balance) / 1000).toFixed(1) + ' kN' },
+      { n: 'Counterweight', d: 'Balances the leaf weight', v: 'Fixed' },
+      { n: 'Gate leaf', d: 'Opens between 1.5 and 2.0 m', v: jam ? 'Jammed' : L.pos.toFixed(0) + '% open', s: jam ? 'bad' : '' }];
+  }
+
+  // ---------------- chart ----------------
   function chart() {
     const c = $('chart'), x = c.getContext('2d'), W = c.width, H = c.height, P = 34, T = m.T;
     x.clearRect(0, 0, W, H);
@@ -193,37 +547,36 @@
     for (let h = 0; h <= 3; h += 0.5) { x.beginPath(); x.moveTo(P, hy(h)); x.lineTo(W - 8, hy(h)); x.stroke(); x.fillText(h.toFixed(1), 4, hy(h) + 4); }
     for (let t = 0; t <= 7200; t += 1800) x.fillText(t / 60 + ' min', tx(t) - 14, H - 6);
     x.setLineDash([5, 4]); x.strokeStyle = '#8c7f63'; x.beginPath(); x.moveTo(P, hy(T.up.top)); x.lineTo(W - 8, hy(T.up.top)); x.stroke(); x.setLineDash([]);
-    const line = (key, color, map, width) => { x.strokeStyle = color; x.lineWidth = width; x.beginPath(); m.hist.forEach((p, i) => { const yy = map(p); i ? x.lineTo(tx(p.t), yy) : x.moveTo(tx(p.t), yy); }); x.stroke(); };
-    line('pos', '#c0632a', p => m.typeId === 'crest' ? hy(p.pos) : py(p.pos), 2);
-    line('h2', '#7fb7c0', p => hy(p.h2), 2.5);
-    line('h1', '#0b5563', p => hy(p.h1), 2.5);
-    if (GT.FAULT_AT && $('condition').value !== 'Healthy') { x.strokeStyle = '#b03a2e'; x.setLineDash([2, 3]); x.beginPath(); x.moveTo(tx(GT.FAULT_AT), 10); x.lineTo(tx(GT.FAULT_AT), H - 22); x.stroke(); x.setLineDash([]); x.fillStyle = '#b03a2e'; x.fillText('fault', tx(GT.FAULT_AT) + 4, 20); }
+    const line = (color, map, width) => { x.strokeStyle = color; x.lineWidth = width; x.beginPath(); m.hist.forEach((p, i) => { const yy = map(p); i ? x.lineTo(tx(p.t), yy) : x.moveTo(tx(p.t), yy); }); x.stroke(); };
+    line('#c0632a', p => m.typeId === 'crest' ? hy(p.pos) : py(m.typeId === 'flap' ? p.pen : p.pos), 2);
+    line('#7fb7c0', p => hy(p.h2), 2.5); line('#0b5563', p => hy(p.h1), 2.5);
+    if ($('condition').value !== 'Healthy') { x.strokeStyle = '#b03a2e'; x.setLineDash([2, 3]); x.beginPath(); x.moveTo(tx(GT.FAULT_AT), 10); x.lineTo(tx(GT.FAULT_AT), H - 22); x.stroke(); x.setLineDash([]); x.fillStyle = '#b03a2e'; x.fillText('fault', tx(GT.FAULT_AT) + 4, 20); }
     $('legend').innerHTML = `<span><i style="background:#0b5563"></i>${T.up.label} level (m)</span><span><i style="background:#7fb7c0"></i>${T.dn.label} level (m)</span><span><i style="background:#c0632a"></i>${m.typeId === 'crest' ? 'Crest level (m)' : m.typeId === 'flap' ? 'Penstock opening (% of chart height)' : 'Gate opening (% of chart height)'}</span><span><i style="background:#8c7f63"></i>Upstream bank</span>`;
   }
 
-  function draw() {
-    const L = m.last, T = m.T, k = m.tot;
-    scene(); chart();
-    const gate = m.typeId === 'crest' ? 'Crest ' + L.pos.toFixed(2) + ' m' : m.typeId === 'flap' ? 'Penstock ' + L.pen.toFixed(0) + '% · pump ' + (L.pump ? 'on' : 'off') : 'Opening ' + L.pos.toFixed(0) + '%';
+  function update() {
+    const L = m.last, k = m.tot;
+    scene(); panels(); chart();
+    const gate = m.typeId === 'crest' ? 'Crest ' + L.pos.toFixed(2) + ' m' : m.typeId === 'flap' ? 'Flap ' + (L.flapFrac * 60).toFixed(0) + '° · penstock ' + L.pen.toFixed(0) + '% · pump ' + (L.pump ? 'on' : 'off') : 'Opening ' + L.pos.toFixed(0) + '% (' + (L.open * 1000).toFixed(0) + ' mm)';
     $('read').textContent = `${Math.floor(m.t / 60)} min   ·   ${gate}   ·   Gate flow ${L.q.toFixed(2)} m³/s`;
     const spill = k.spill1 + k.spill2;
     $('msg').textContent = m.alarm + (spill > 0.5 ? `  Spill so far: ${k.spill1.toFixed(0)} m³ upstream, ${k.spill2.toFixed(0)} m³ downstream.` : '');
     $('msg').className = spill > 0.5 || /frozen|jam|cut|stopped/i.test(m.alarm) ? 'bad' : '';
+    if (reduceMotion) moveParticles(0);
   }
 
-  // ---------- comparison ----------
   function compare() {
     const sc = $('scenario').value, cond = $('condition').value, rows = [];
     for (const id of ids) {
       const r = GT.create(id, sc, cond); let p1 = 0, p2 = 0;
       for (let i = 0; i < 7200; i++) { GT.step(r); p1 = Math.max(p1, r.last.h1); p2 = Math.max(p2, r.last.h2); }
-      const k = r.tot, f = (v, bad) => `<td class="n ${v > 0.5 ? (bad ? 'bad-cell' : '') : 'ok-cell'}">${v > 0.5 ? Math.round(v).toLocaleString('en-IN') : '0'}</td>`;
-      rows.push(`<tr><td>${GT.TYPES[id].name}<br><small>${GT.TYPES[id].use}</small></td><td class="n">${p1.toFixed(2)}</td><td class="n">${p2.toFixed(2)}</td>${f(k.spill1, 1)}${f(k.spill2, 1)}${f(k.back, 1)}<td class="n">${Math.round(k.pumped).toLocaleString('en-IN')}</td></tr>`);
+      const k = r.tot, f = v => `<td class="n ${v > 0.5 ? 'bad-cell' : 'ok-cell'}">${v > 0.5 ? Math.round(v).toLocaleString('en-IN') : '0'}</td>`;
+      rows.push(`<tr><td>${GT.TYPES[id].name}<br><small>${GT.TYPES[id].use}</small></td><td class="n">${p1.toFixed(2)}</td><td class="n">${p2.toFixed(2)}</td>${f(k.spill1)}${f(k.spill2)}${f(k.back)}<td class="n">${Math.round(k.pumped).toLocaleString('en-IN')}</td></tr>`);
     }
     $('compare').innerHTML = rows.join('');
   }
 
-  selectType(type); compare();
+  selectType(type); compare(); requestAnimationFrame(animate);
 })();
 </script>
 </body>

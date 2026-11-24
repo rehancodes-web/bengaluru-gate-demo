@@ -125,4 +125,23 @@ ok(runTo('float','High river / backflow','Healthy').tot.back > runTo('vertical',
 ok(runTo('crest','High river / backflow','Healthy').tot.back < runTo('crest','High river / backflow','Gate jam').tot.back, 'crest gate rises to block reverse flow');
 ok(fs.readFileSync(path.join(__dirname,'gate-types.html'),'utf8').includes('src="gate-types.js"'), 'gate types page loads its model');
 
+// Mechanism and flow-at-gate calculations
+ok(Math.abs(GT.plateThrust(1.0, 0, 0, 2) - 1000*9.81*2*0.5) < 1e-6, 'hydrostatic thrust: 1 m of water on a 2 m plate is 9.81 kN');
+ok(GT.plateThrust(1.0, 1.0, 0, 2) === 0, 'no net thrust with equal levels');
+const at = (id, sc, c, n) => { const m = GT.create(id, sc, c); for (let i = 0; i < n; i++) GT.step(m); return m; };
+for (const id of Object.keys(GT.TYPES)) for (const sc of Object.keys(GT.SCENARIOS)) {
+  const m = at(id, sc, 'Healthy', 1800), r = GT.mechanics(m);
+  ok(r.parts.length >= 5 && r.parts.every(p => p.name && p.value && !/NaN|undefined|Infinity/.test(p.value + p.note)), `${id} / ${sc}: mechanism values all finite`);
+  ok(Number.isFinite(r.flow.velocity) && r.flow.velocity >= 0 && /flow|overflow/i.test(r.flow.regime), `${id} / ${sc}: flow regime and velocity`);
+}
+{ const v = GT.mechanics(at('vertical','Cloudburst','Healthy',1500)), rd = GT.mechanics(at('radial','Cloudburst','Healthy',1500));
+  ok(v.hoist > v.weight, 'vertical hoist must lift weight plus friction');
+  ok(rd.hoist < rd.vertEquiv, 'radial gate needs less hoist force than an equal vertical gate');
+  const f = GT.flowAtGate(at('vertical','Cloudburst','Healthy',1500));
+  ok(Math.abs(f.velocity * 2 * f.depth - Math.abs(at('vertical','Cloudburst','Healthy',1500).last.q)) < 1e-6, 'continuity at the vena contracta: Q = v × b × 0.61a'); }
+{ const fl = at('flap','High river / backflow','Healthy',3600), r = GT.mechanics(fl);
+  ok(fl.last.h2 > fl.last.h1 && r.flapAngle === 0, 'flap seated when the river is higher'); }
+{ const cr = GT.mechanics(at('crest','Lake already full','Healthy',600)); ok(cr.cylinder > 0 && cr.moment > 0, 'crest gate cylinder resists the water moment'); }
+{ const fd = at('float','Cloudburst','Healthy',1500), r = GT.mechanics(fd); ok(r.buoyancy > r.balance, 'float buoyancy above the balance point when the lake is above 1.5 m'); }
+
 console.log(`PASS: ${checks} checks, including ${runs} scenario/fault/controller runs and ${typeRuns} gate-type runs with exact water balance.`);
