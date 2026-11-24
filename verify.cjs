@@ -102,4 +102,27 @@ for(const [name,expected] of [['Underpass pump outage',1],['Underpass pump resto
 set('scenario','Drain surcharge into street'); run('reset()'); ok(run('streetFlow().exchange<0'), 'drain surcharges into street');
 ok(fs.readFileSync(path.join(__dirname,'index.html'),'utf8').includes('src="controller.js"'), 'index loads controller');
 
-console.log(`PASS: ${checks} checks, including ${runs} scenario/fault/controller runs with exact water balance.`);
+// ---------- Gate-type models (gate-types.js) ----------
+const GT = require('./gate-types.js');
+let typeRuns = 0;
+for (const id of Object.keys(GT.TYPES)) for (const sc of Object.keys(GT.SCENARIOS)) for (const c of Object.keys(GT.CONDITIONS)) {
+  const m = GT.create(id, sc, c); let bad = false;
+  for (let i = 0; i < 7200; i++) { GT.step(m); const L = m.last; if (!(L.h1 >= 0 && L.h1 <= m.T.up.top + 1e-9 && Number.isFinite(L.q))) bad = true; if (m.typeId !== 'crest' && (L.pos < 0 || L.pos > 100)) bad = true; }
+  ok(!bad, `${id} / ${sc} / ${c}: levels and travel in range`);
+  ok(GT.balanceError(m) < 1e-4, `${id} / ${sc} / ${c}: water balance`);
+  typeRuns++;
+}
+const runTo = (id, sc, c) => { const m = GT.create(id, sc, c); for (let i = 0; i < 7200; i++) GT.step(m); return m; };
+ok(Math.abs(GT.orifice(1.5, 0.1, 2, 0.4, 0.62) - 0.62*2*0.4*Math.sqrt(2*9.81*1.3)) < 1e-9, 'gate-type orifice matches the main model');
+ok(Math.abs(GT.weir(1.2, 0, 8, 1.0, 1.8) - 1.8*8*Math.pow(0.2,1.5)) < 1e-9, 'free weir flow over a crest gate');
+ok(GT.weir(1.0, 1.3, 8, 1.0, 1.8) < 0, 'weir reverses when the downstream side is higher');
+ok(runTo('float','Monsoon storm','Power cut').tot.spill1 === runTo('float','Monsoon storm','Healthy').tot.spill1 && runTo('float','Cloudburst','Power cut').last.pos === runTo('float','Cloudburst','Healthy').last.pos, 'float gate unaffected by a power cut');
+ok(runTo('vertical','Cloudburst','Power cut').last.pos === runTo('vertical','Cloudburst','Power cut').hist[60].pos, 'motorised gate holds position after a power cut');
+ok(runTo('flap','High river / backflow','Healthy').tot.back < 1, 'healthy flap gate stops backflow');
+ok(runTo('flap','High river / backflow','Debris').tot.back > 1, 'debris-propped flap lets backflow through');
+ok(runTo('flap','Monsoon storm','Power cut').tot.spill1 > runTo('flap','Monsoon storm','Healthy').tot.spill1, 'losing the pump floods the street drain');
+ok(runTo('float','High river / backflow','Healthy').tot.back > runTo('vertical','High river / backflow','Healthy').tot.back, 'float gate cannot react to downstream backflow; motorised gate closes');
+ok(runTo('crest','High river / backflow','Healthy').tot.back < runTo('crest','High river / backflow','Gate jam').tot.back, 'crest gate rises to block reverse flow');
+ok(fs.readFileSync(path.join(__dirname,'gate-types.html'),'utf8').includes('src="gate-types.js"'), 'gate types page loads its model');
+
+console.log(`PASS: ${checks} checks, including ${runs} scenario/fault/controller runs and ${typeRuns} gate-type runs with exact water balance.`);

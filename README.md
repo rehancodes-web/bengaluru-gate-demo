@@ -17,7 +17,11 @@ Select **Lake rising**, then **Advance 1 second**. The controller requests about
 
 Each case supports healthy equipment, an invalid stage sensor, a jammed gate, loss of telemetry and a local stop. Export a run to CSV before resetting to compare results.
 
-**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 237 checks, including all 196 scenario, equipment-condition and controller combinations with an exact water balance.
+**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 448 checks, including all 196 scenario, equipment-condition and controller combinations and all 100 gate-type combinations with an exact water balance.
+
+## Gate types compared
+
+`gate-types.html` runs five working models side by side: a vertical lift gate (lake outlet), a radial gate (lake-chain regulator), a flap gate with a motorised penstock and pump (storm-drain outfall), a crest gate (lake waste weir) and a float-operated gate (no power). Each has its own hydraulics and automatic control. Run them through four flood cases (monsoon storm, cloudburst, high river with backflow, lake already full) and five equipment conditions (healthy, power cut, level sensor failure, gate jam, debris), then compare peak levels, spill, reverse flow and pumping for all five. Dimensions are illustrative and storage is simplified to a constant plan area.
 
 ## Street flooding cases
 

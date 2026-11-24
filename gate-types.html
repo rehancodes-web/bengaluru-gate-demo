@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sluice gate types compared</title>
+<style>
+  :root{--bg:#f2f7f6;--card:#fff;--ink:#153b47;--ink-2:#4e666d;--line:#ccddda;--head:#133d49;--water:#4ba4b2;--water-2:#2f8394;--earth:#b7a98a;--steel:#56656b;--warn:#c0632a;--ok:#2f7d5b;--accent:#076667}
+  *{box-sizing:border-box}
+  body{margin:0 auto;max-width:1120px;padding:24px;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,sans-serif}
+  header,section{background:var(--card);padding:20px 26px;margin-bottom:14px;border-radius:8px}
+  header{background:var(--head);color:#fff}
+  header a{color:#bfe3e6}
+  h1,h2,h3,p{margin:4px 0 12px}h1{font-size:28px}h2{font-size:23px}h3{font-size:18px}
+  small,.muted{color:var(--ink-2)}
+  header small{color:#cfe3e4}
+  button,select{font:inherit;padding:6px 10px;margin:3px;color:#174957;border:1px solid #9fbcb9;border-radius:6px;background:#fff;cursor:pointer}
+  button:focus-visible,select:focus-visible{outline:3px solid #ec9d46;outline-offset:2px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 4px}
+  .tabs button[aria-selected=true]{background:var(--head);color:#fff;border-color:var(--head)}
+  .split{display:grid;grid-template-columns:1.1fr 1fr;gap:22px}
+  .facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px;margin:8px 0 0}
+  .facts dt{color:var(--ink-2)}.facts dd{margin:0}
+  svg{width:100%;height:auto;display:block;background:#f4f8f8;border-radius:6px}
+  svg text{font:13px system-ui;fill:var(--ink)}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:10px 0}
+  label{font-size:15px}
+  #read{font-size:19px;font-weight:600;margin:10px 0 4px}
+  #msg{border-left:4px solid #ec9d46;padding:8px 12px;background:#fff5e7;min-height:44px}
+  #msg.bad{border-left-color:#c0392b;background:#fdecea}
+  canvas{width:100%;height:220px;display:block;background:#f4f8f8;border-radius:6px}
+  .legend{display:flex;gap:16px;font-size:14px;color:var(--ink-2);flex-wrap:wrap;margin-top:6px}
+  .legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  td,th{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:#e3efec}td.n,th.n{text-align:right}
+  .bad-cell{color:#b03a2e;font-weight:600}.ok-cell{color:var(--ok)}
+  @media(max-width:800px){body{padding:8px}section,header{padding:14px}.split{grid-template-columns:1fr}td,th{padding:5px;font-size:13px}}
+  @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Sluice gate types for Bengaluru flood sites</h1>
+  <p>Five working models, one per gate type, each with its own hydraulics and automatic control. Run them through the same storms and equipment failures to see where each type works and where it doesn't.</p>
+  <small>Every dimension and setting is illustrative, not a design for any site. Storage is simplified to a constant plan area. <a href="index.html">Open the detailed lake-outlet simulator</a>, which accepts surveyed site data.</small>
+</header>
+
+<section>
+  <div class="tabs" role="tablist" aria-label="Gate type" id="tabs"></div>
+  <div class="split" style="margin-top:14px">
+    <div>
+      <h2 id="tName"></h2>
+      <p id="tWhere"></p>
+      <dl class="facts">
+        <dt>Typical use</dt><dd id="tUse"></dd>
+        <dt>Automatic control</dt><dd id="tControl"></dd>
+        <dt>Needs power</dt><dd id="tPower"></dd>
+      </dl>
+    </div>
+    <div><svg id="scene" viewBox="0 0 560 300" role="img" aria-label="Gate cross-section"></svg></div>
+  </div>
+</section>
+
+<section>
+  <h2>Run a flood</h2>
+  <div class="row">
+    <label>Flood case <select id="scenario"></select></label>
+    <label>Equipment condition <select id="condition"></select></label>
+  </div>
+  <p class="muted" id="caseNote"></p>
+  <div class="row">
+    <button id="run">Run</button><button id="step">Advance 1 minute</button><button id="reset">Reset</button>
+    <label>Speed <select id="speed"><option value="30">30×</option><option value="120" selected>120×</option><option value="600">600×</option></select></label>
+  </div>
+  <div id="read" aria-live="polite"></div>
+  <div id="msg" role="status"></div>
+  <canvas id="chart" width="1060" height="220" aria-label="Levels and gate position over time"></canvas>
+  <div class="legend" id="legend"></div>
+</section>
+
+<section>
+  <h2>Compare all five on this flood</h2>
+  <p class="muted">Each model runs the full two hours of the selected flood case and equipment condition. Spill means water overtopping the upstream bank or the downstream drain. Reverse flow is water pushed back upstream through or over the gate.</p>
+  <div style="overflow-x:auto"><table><thead><tr><th>Gate type</th><th class="n">Peak upstream (m)</th><th class="n">Peak downstream (m)</th><th class="n">Upstream spill (m³)</th><th class="n">Downstream spill (m³)</th><th class="n">Reverse flow (m³)</th><th class="n">Pumped (m³)</th></tr></thead><tbody id="compare"></tbody></table></div>
+</section>
+
+<script src="gate-types.js"></script>
+<script>
+(function(){
+  const GT = window.GateTypes, $ = id => document.getElementById(id);
+  const ids = Object.keys(GT.TYPES);
+  let type = ids[0], m, timer = null;
+
+  // ---------- controls ----------
+  ids.forEach((id, i) => { const b = document.createElement('button'); b.role = 'tab'; b.id = 'tab-' + id; b.textContent = GT.TYPES[id].name; b.setAttribute('aria-selected', i === 0); b.onclick = () => selectType(id); $('tabs').appendChild(b); });
+  $('tabs').addEventListener('keydown', e => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; const n = ids[(ids.indexOf(type) + d + ids.length) % ids.length]; selectType(n); $('tab-' + n).focus(); });
+  for (const s of Object.keys(GT.SCENARIOS)) $('scenario').add(new Option(s));
+  for (const c of Object.keys(GT.CONDITIONS)) $('condition').add(new Option(c));
+  $('scenario').onchange = $('condition').onchange = () => { reset(); compare(); };
+  $('reset').onclick = reset;
+  $('step').onclick = () => { stop(); for (let i = 0; i < 60 && m.t < 7200; i++) GT.step(m); draw(); };
+  $('run').onclick = () => timer ? stop() : start();
+
+  function selectType(id) {
+    type = id;
+    ids.forEach(x => { const b = $('tab-' + x); b.setAttribute('aria-selected', x === id); b.tabIndex = x === id ? 0 : -1; });
+    const T = GT.TYPES[id];
+    $('tName').textContent = T.name; $('tWhere').textContent = T.where; $('tUse').textContent = T.use; $('tControl').textContent = T.control;
+    $('tPower').textContent = id === 'float' ? 'No' : id === 'flap' ? 'The flap does not; the penstock and pump do' : 'Yes, for the hoist';
+    reset();
+  }
+  function start() { timer = setInterval(() => { const n = +$('speed').value / 10; for (let i = 0; i < n && m.t < 7200; i++) GT.step(m); draw(); if (m.t >= 7200) stop(); }, 100); $('run').textContent = 'Pause'; }
+  function stop() { clearInterval(timer); timer = null; $('run').textContent = 'Run'; }
+  function reset() { stop(); m = GT.create(type, $('scenario').value, $('condition').value); $('caseNote').textContent = GT.SCENARIOS[$('scenario').value].note + ' ' + GT.CONDITIONS[$('condition').value]; draw(); }
+
+  // ---------- drawing ----------
+  const NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; return e; }
+  const Y = h => 250 - h * 70; // 0 m at y=250, 3 m at y=40
+  function scene() {
+    const svg = $('scene'); svg.textContent = '';
+    const T = m.T, L = m.last, gx = 280;
+    svg.append(el('rect', { x: 0, y: 250, width: 560, height: 50, fill: '#b7a98a' }));
+    // banks
+    svg.append(el('line', { x1: 10, y1: Y(T.up.top), x2: 240, y2: Y(T.up.top), stroke: '#8c7f63', 'stroke-dasharray': '5 4' }));
+    svg.append(el('text', { x: 12, y: Y(T.up.top) - 6 }, T.up.label + ' bank ' + T.up.top.toFixed(1) + ' m'));
+    const dnTop = T.dn.area === Infinity ? T.dn.top : T.dn.top;
+    svg.append(el('line', { x1: 320, y1: Y(dnTop), x2: 550, y2: Y(dnTop), stroke: '#8c7f63', 'stroke-dasharray': '5 4' }));
+    svg.append(el('text', { x: 548, y: Y(dnTop) - 6, 'text-anchor': 'end' }, T.dn.label + ' bank ' + dnTop.toFixed(1) + ' m'));
+    // water
+    svg.append(el('rect', { x: 0, y: Y(L.h1), width: gx - 6, height: Math.max(0, 250 - Y(L.h1)), fill: '#4ba4b2', opacity: .85 }));
+    svg.append(el('rect', { x: gx + 6, y: Y(L.h2), width: 560 - gx - 6, height: Math.max(0, 250 - Y(L.h2)), fill: '#4ba4b2', opacity: .7 }));
+    svg.append(el('text', { x: 14, y: 270, fill: '#fff' }, T.up.label + ' ' + L.h1.toFixed(2) + ' m'));
+    svg.append(el('text', { x: 546, y: 270, 'text-anchor': 'end' }, T.dn.label + ' ' + L.h2.toFixed(2) + ' m'));
+    // gate structure by type
+    const steel = '#56656b';
+    if (m.typeId === 'vertical' || m.typeId === 'float') {
+      const lift = L.pos / 100 * T.amax;
+      svg.append(el('rect', { x: gx - 10, y: 30, width: 20, height: 8, fill: steel }));
+      svg.append(el('rect', { x: gx - 7, y: Y(lift + 2.6), width: 14, height: 2.6 * 70, fill: steel }));
+      svg.append(el('line', { x1: gx, y1: 38, x2: gx, y2: Y(lift + 2.6), stroke: steel, 'stroke-width': 3 }));
+      if (m.typeId === 'float') {
+        const fy = Y(Math.max(L.h1, 0.2)) - 8;
+        svg.append(el('line', { x1: gx, y1: 60, x2: 200, y2: 60, stroke: steel, 'stroke-width': 3 }));
+        svg.append(el('line', { x1: 200, y1: 60, x2: 200, y2: fy, stroke: steel, 'stroke-width': 2 }));
+        svg.append(el('rect', { x: 186, y: fy, width: 28, height: 14, rx: 6, fill: '#e9c46a', stroke: '#9b7a2b' }));
+        svg.append(el('text', { x: 200, y: fy - 6, 'text-anchor': 'middle' }, 'Float'));
+      }
+    } else if (m.typeId === 'radial') {
+      const a = L.pos / 100 * T.amax, px = gx + 90, py = Y(2.6), r = Math.hypot(px - gx, py - Y(0));
+      const ang0 = Math.atan2(Y(a) - py, gx - px), span = 0.55;
+      const p1 = [px + r * Math.cos(ang0), py + r * Math.sin(ang0)], p2 = [px + r * Math.cos(ang0 - span), py + r * Math.sin(ang0 - span)];
+      svg.append(el('path', { d: `M${p1[0]} ${p1[1]} A${r} ${r} 0 0 1 ${p2[0]} ${p2[1]}`, stroke: steel, 'stroke-width': 7, fill: 'none' }));
+      svg.append(el('line', { x1: px, y1: py, x2: p1[0], y2: p1[1], stroke: steel, 'stroke-width': 3 }));
+      svg.append(el('line', { x1: px, y1: py, x2: p2[0], y2: p2[1], stroke: steel, 'stroke-width': 3 }));
+      svg.append(el('circle', { cx: px, cy: py, r: 6, fill: steel }));
+      svg.append(el('text', { x: px + 10, y: py - 8 }, 'Trunnion'));
+    } else if (m.typeId === 'crest') {
+      const z = L.pos, hingeY = Y(T.zmin - 0.2), topY = Y(z), len = hingeY - Y(T.zmax);
+      const dy = hingeY - topY, dx = Math.sqrt(Math.max(0, len * len - dy * dy));
+      svg.append(el('rect', { x: gx - 20, y: hingeY, width: 40, height: 250 - hingeY, fill: '#a89a7b' }));
+      svg.append(el('line', { x1: gx - 8, y1: hingeY, x2: gx - 8 + dx, y2: topY, stroke: steel, 'stroke-width': 8, 'stroke-linecap': 'round' }));
+      svg.append(el('circle', { cx: gx - 8, cy: hingeY, r: 5, fill: '#333' }));
+      svg.append(el('text', { x: gx + 26, y: topY - 6 }, 'Crest ' + z.toFixed(2) + ' m'));
+    } else if (m.typeId === 'flap') {
+      const open = Math.max(0, Math.min(1, (L.h1 - L.h2) / 0.15)) * (L.h1 - L.h2 > T.flapHead ? 1 : 0);
+      svg.append(el('rect', { x: gx - 60, y: Y(T.amax) - 4, width: 66, height: Y(0) - Y(T.amax) + 4, fill: 'none', stroke: '#7c8b90', 'stroke-width': 2 }));
+      const hy = Y(T.amax), ang = open * 1.0;
+      svg.append(el('line', { x1: gx + 6, y1: hy, x2: gx + 6 + Math.sin(ang) * T.amax * 70, y2: hy + Math.cos(ang) * T.amax * 70, stroke: steel, 'stroke-width': 7, 'stroke-linecap': 'round' }));
+      svg.append(el('circle', { cx: gx + 6, cy: hy, r: 4, fill: '#333' }));
+      svg.append(el('text', { x: gx + 14, y: hy - 8 }, 'Flap'));
+      const pen = L.pen / 100 * T.amax;
+      svg.append(el('rect', { x: gx - 46, y: Y(pen + 1.4), width: 10, height: 1.4 * 70, fill: steel }));
+      svg.append(el('text', { x: gx - 41, y: Y(pen + 1.4) - 6, 'text-anchor': 'middle' }, 'Penstock'));
+      svg.append(el('circle', { cx: 120, cy: 70, r: 14, fill: L.pump ? '#2f8394' : '#9aa9ad' }));
+      svg.append(el('path', { d: 'M120 84V' + (Y(0.2)) + 'M134 70H' + (gx + 60), stroke: L.pump ? '#2f8394' : '#9aa9ad', 'stroke-width': 4, fill: 'none' }));
+      svg.append(el('text', { x: 120, y: 48, 'text-anchor': 'middle' }, L.pump ? 'Pump running' : 'Pump off'));
+    }
+    // flow arrow
+    if (Math.abs(L.q) > 0.02) {
+      const dir = Math.sign(L.q), y = Y(Math.min(L.h1, L.h2) / 2);
+      svg.append(el('path', { d: dir > 0 ? `M${gx + 20} ${y}h40l-8 -6m8 6l-8 6` : `M${gx - 20} ${y}h-40l8 -6m-8 6l8 6`, stroke: dir > 0 ? '#0b5563' : '#b03a2e', 'stroke-width': 3, fill: 'none' }));
+      svg.append(el('text', { x: dir > 0 ? gx + 24 : gx - 64, y: y - 10, fill: dir > 0 ? '#0b5563' : '#b03a2e' }, Math.abs(L.q).toFixed(2) + ' m³/s' + (dir < 0 ? ' back' : '')));
+    }
+  }
+
+  function chart() {
+    const c = $('chart'), x = c.getContext('2d'), W = c.width, H = c.height, P = 34, T = m.T;
+    x.clearRect(0, 0, W, H);
+    const tx = t => P + (W - P - 8) * t / 7200, hy = h => H - 22 - (H - 34) * h / 3, py = p => H - 22 - (H - 34) * p / 100;
+    x.strokeStyle = '#d5e3e0'; x.fillStyle = '#4e666d'; x.font = '12px system-ui'; x.lineWidth = 1;
+    for (let h = 0; h <= 3; h += 0.5) { x.beginPath(); x.moveTo(P, hy(h)); x.lineTo(W - 8, hy(h)); x.stroke(); x.fillText(h.toFixed(1), 4, hy(h) + 4); }
+    for (let t = 0; t <= 7200; t += 1800) x.fillText(t / 60 + ' min', tx(t) - 14, H - 6);
+    x.setLineDash([5, 4]); x.strokeStyle = '#8c7f63'; x.beginPath(); x.moveTo(P, hy(T.up.top)); x.lineTo(W - 8, hy(T.up.top)); x.stroke(); x.setLineDash([]);
+    const line = (key, color, map, width) => { x.strokeStyle = color; x.lineWidth = width; x.beginPath(); m.hist.forEach((p, i) => { const yy = map(p); i ? x.lineTo(tx(p.t), yy) : x.moveTo(tx(p.t), yy); }); x.stroke(); };
+    line('pos', '#c0632a', p => m.typeId === 'crest' ? hy(p.pos) : py(p.pos), 2);
+    line('h2', '#7fb7c0', p => hy(p.h2), 2.5);
+    line('h1', '#0b5563', p => hy(p.h1), 2.5);
+    if (GT.FAULT_AT && $('condition').value !== 'Healthy') { x.strokeStyle = '#b03a2e'; x.setLineDash([2, 3]); x.beginPath(); x.moveTo(tx(GT.FAULT_AT), 10); x.lineTo(tx(GT.FAULT_AT), H - 22); x.stroke(); x.setLineDash([]); x.fillStyle = '#b03a2e'; x.fillText('fault', tx(GT.FAULT_AT) + 4, 20); }
+    $('legend').innerHTML = `<span><i style="background:#0b5563"></i>${T.up.label} level (m)</span><span><i style="background:#7fb7c0"></i>${T.dn.label} level (m)</span><span><i style="background:#c0632a"></i>${m.typeId === 'crest' ? 'Crest level (m)' : m.typeId === 'flap' ? 'Penstock opening (% of chart height)' : 'Gate opening (% of chart height)'}</span><span><i style="background:#8c7f63"></i>Upstream bank</span>`;
+  }
+
+  function draw() {
+    const L = m.last, T = m.T, k = m.tot;
+    scene(); chart();
+    const gate = m.typeId === 'crest' ? 'Crest ' + L.pos.toFixed(2) + ' m' : m.typeId === 'flap' ? 'Penstock ' + L.pen.toFixed(0) + '% · pump ' + (L.pump ? 'on' : 'off') : 'Opening ' + L.pos.toFixed(0) + '%';
+    $('read').textContent = `${Math.floor(m.t / 60)} min   ·   ${gate}   ·   Gate flow ${L.q.toFixed(2)} m³/s`;
+    const spill = k.spill1 + k.spill2;
+    $('msg').textContent = m.alarm + (spill > 0.5 ? `  Spill so far: ${k.spill1.toFixed(0)} m³ upstream, ${k.spill2.toFixed(0)} m³ downstream.` : '');
+    $('msg').className = spill > 0.5 || /frozen|jam|cut|stopped/i.test(m.alarm) ? 'bad' : '';
+  }
+
+  // ---------- comparison ----------
+  function compare() {
+    const sc = $('scenario').value, cond = $('condition').value, rows = [];
+    for (const id of ids) {
+      const r = GT.create(id, sc, cond); let p1 = 0, p2 = 0;
+      for (let i = 0; i < 7200; i++) { GT.step(r); p1 = Math.max(p1, r.last.h1); p2 = Math.max(p2, r.last.h2); }
+      const k = r.tot, f = (v, bad) => `<td class="n ${v > 0.5 ? (bad ? 'bad-cell' : '') : 'ok-cell'}">${v > 0.5 ? Math.round(v).toLocaleString('en-IN') : '0'}</td>`;
+      rows.push(`<tr><td>${GT.TYPES[id].name}<br><small>${GT.TYPES[id].use}</small></td><td class="n">${p1.toFixed(2)}</td><td class="n">${p2.toFixed(2)}</td>${f(k.spill1, 1)}${f(k.spill2, 1)}${f(k.back, 1)}<td class="n">${Math.round(k.pumped).toLocaleString('en-IN')}</td></tr>`);
+    }
+    $('compare').innerHTML = rows.join('');
+  }
+
+  selectType(type); compare();
+})();
+</script>
+</body>
+</html>
