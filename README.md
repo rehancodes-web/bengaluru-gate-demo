@@ -17,13 +17,19 @@ Select **Lake rising**, then **Advance 1 second**. The controller requests about
 
 Each case supports healthy equipment, an invalid stage sensor, a jammed gate, loss of telemetry and a local stop. Export a run to CSV before resetting to compare results.
 
-**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 496 checks, including all 196 scenario, equipment-condition and controller combinations and all 100 gate-type combinations with an exact water balance.
+**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 900 checks, including all 196 scenario, equipment-condition and controller combinations and all 100 gate-type combinations with an exact water balance.
 
 ## Gate types compared
 
 `gate-types.html` runs five working models side by side: a vertical lift gate (lake outlet), a radial gate (lake-chain regulator), a flap gate with a motorised penstock and pump (storm-drain outfall), a crest gate (lake waste weir) and a float-operated gate (no power). Each has its own hydraulics and automatic control. Run them through four flood cases (monsoon storm, cloudburst, high river with backflow, lake already full) and five equipment conditions (healthy, power cut, level sensor failure, gate jam, debris), then compare peak levels, spill, reverse flow and pumping for all five.
 
-Each gate type has a labelled cross-section of its mechanism (hoist, spindle, gearbox, guides and seals; trunnion, arms and winch; flap hinge, penstock, pump and non-return valve; hinged leaf and hydraulic cylinder; float, stilling well, chain and counterweight) with water moving through it at speeds taken from the flow calculation. Live panels show the forces and power on each component, the flow regime at the gate (free jet and hydraulic jump, submerged, weir overflow or reverse), velocity, contracted jet depth and Froude number, and each step from sensor to gate. Masses, friction and efficiencies are illustrative; replace them with manufacturer data for a real gate. Dimensions are illustrative and storage is simplified to a constant plan area.
+Each gate type has a labelled cross-section of its mechanism (hoist, spindle, gearbox, guides and seals; trunnion, arms and winch; flap hinge, penstock, pump and non-return valve; hinged leaf and hydraulic cylinder; float, stilling well, chain and counterweight) with water moving through it at speeds taken from the flow calculation. Live panels show the forces and power on each component, the flow regime at the gate (free jet and hydraulic jump, submerged, weir overflow or reverse), velocity, contracted jet depth and Froude number, and each step from sensor to gate. Masses, friction and efficiencies are illustrative; replace them with manufacturer data for a real gate.
+
+Six further failures from the failure analysis can be selected: seal leakage, brake creep, a crest-gate hydraulic leak, a backup level sensor that takes over by voting, a backup generator that starts after 90 seconds, and an upstream lake releasing at the local peak.
+
+## Gate assemblies and materials
+
+`gate-assembly.html` shows an exploded isometric assembly of each gate type. Scroll to separate the parts and select one to see its material and grade, size, protection, purpose and maintenance. Each type has a full bill of materials and an installation sequence, and a materials guide explains the choices for Bengaluru's sewage-polluted water (stainless 304, 316L, 431 and duplex; coated IS 2062 steel; EPDM and neoprene seals; bronze and self-lubricating bushes; UHMW-PE; A4-70 fasteners; M30 concrete) with the Indian Standards commonly used. Sizes are illustrative; the gate designer confirms grades and sections. Dimensions are illustrative and storage is simplified to a constant plan area.
 
 ## Street flooding cases
 

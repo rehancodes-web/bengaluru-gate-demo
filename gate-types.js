@@ -32,14 +32,20 @@
     'Monsoon storm': { note: 'A two-hour design storm. Inflow peaks at 40 minutes.', lakeStart: 1.35, drainStart: 0.3, inflow: t => 0.6 + 7.4 * tri(t, 0, 2400, 7200), lateral: t => 0.2 + 1.0 * tri(t, 600, 2700, 7200), river: () => 0.6 },
     'Cloudburst': { note: 'An intense 30-minute burst on an already wet catchment.', lakeStart: 1.45, drainStart: 0.4, inflow: t => 0.8 + 14 * tri(t, 600, 1200, 2400), lateral: t => 0.3 + 2.5 * tri(t, 600, 1300, 2600), river: () => 0.8 },
     'High river / backflow': { note: 'Moderate rain while the receiving drain or river rises above the outlet.', lakeStart: 1.45, drainStart: 0.4, inflow: t => 0.8 + 2.2 * tri(t, 0, 3000, 7200), lateral: t => 0.2, river: t => 0.6 + 1.8 * tri(t, 900, 3600, 7200) },
+    'Upstream lake releases at the peak': { note: 'Uncoordinated lake chain: an upstream lake opens its gate and its release reaches the drain just as the local storm peaks.', lakeStart: 1.4, drainStart: 0.4, inflow: t => 0.6 + 6.4 * tri(t, 0, 2400, 7200), lateral: t => 0.2 + 1.0 * tri(t, 600, 2700, 7200) + 3.5 * tri(t, 1500, 2700, 4800), river: () => 0.6 },
     'Lake already full': { note: 'The lake starts near its operating limit before a moderate storm.', lakeStart: 1.9, drainStart: 0.6, inflow: t => 0.8 + 3.5 * tri(t, 0, 2400, 7200), lateral: t => 0.3 + 0.8 * tri(t, 600, 2700, 7200), river: () => 0.7 }
   };
   const CONDITIONS = {
     'Healthy': 'All equipment works.',
-    'Power cut': 'Mains and backup power lost at 10 minutes. Motorised gates hold where they are; pumps stop.',
+    'Power cut': 'Mains fails at 10 minutes and the backup generator does not start. Motorised gates hold where they are; pumps stop.',
+    'Power cut, backup starts': 'Mains fails at 10 minutes; the backup generator takes 90 seconds to start, then control and pumps resume.',
     'Level sensor failure': 'The upstream level transmitter freezes at 10 minutes. Automatic control must detect it and hold.',
+    'Sensor failure, backup sensor': 'The main level sensor freezes at 10 minutes, but a second sensor of a different type disagrees with it; voting switches control to the backup.',
     'Gate jam': 'The gate stops moving at 10 minutes, wherever it is.',
-    'Debris': 'Trash at the gate: a flap gate cannot close fully; other gates lose 40% of their flow capacity.'
+    'Debris': 'Trash at the gate: a flap gate cannot close fully; other gates lose 40% of their flow capacity.',
+    'Seal leakage': 'Worn seals from 10 minutes: water passes a closed gate through an equivalent 6 mm gap along the bottom.',
+    'Brake creep': 'Vertical and radial gates: from 10 minutes the brake slips and the leaf drifts down without a command. The PLC detects the drift and corrects it.',
+    'Hydraulic leak': 'Crest gate only: from 10 minutes a cylinder seal leaks; the leaf sinks faster than the power pack can raise it.'
   };
   const FAULT_AT = 600;
 
@@ -100,18 +106,27 @@
   }
   function levels(m) { const T = m.T; return { h1: m.V1 / T.up.area, h2: T.dn.area === Infinity ? m.S.river(m.t) : m.V2 / T.dn.area }; }
   const faultOn = (m, c) => m.condition === c && m.t >= FAULT_AT;
-  const hasPower = m => !faultOn(m, 'Power cut');
+  const hasPower = m => !faultOn(m, 'Power cut') && !(m.condition === 'Power cut, backup starts' && m.t >= FAULT_AT && m.t < FAULT_AT + 90);
 
   // The controller's view of the upstream level: frozen after a sensor failure. A frozen signal is detected
   // after 60 s of no change while flow is moving, and automatic control then holds.
   function measuredUp(m, h1) {
+    if (faultOn(m, 'Sensor failure, backup sensor')) { // voting: primary frozen, backup live; mismatch > 3 cm or 10 s stale switches over
+      if (m.frozen === null) m.frozen = h1;
+      const switched = Math.abs(m.frozen - h1) > 0.03 || m.t >= FAULT_AT + 10;
+      m.meas = switched ? h1 : m.frozen; m.sensorOk = true; m.voted = switched;
+      return { v: m.meas, ok: true };
+    }
     if (!faultOn(m, 'Level sensor failure')) { m.meas = h1; m.sensorOk = true; return { v: h1, ok: true }; }
     if (m.frozen === null) m.frozen = h1;
     m.meas = m.frozen; m.sensorOk = m.t < FAULT_AT + 60;
     return { v: m.frozen, ok: m.sensorOk };
   }
 
-  function gateFlow(m, h1, h2) {
+  const LEAK_GAP = 0.006;
+  function leakage(m, h1, h2) { return faultOn(m, 'Seal leakage') ? orifice(h1, h2, m.T.b, LEAK_GAP, 0.6) : 0; }
+  function gateFlow(m, h1, h2) { const q = gateFlowMain(m, h1, h2), lk = leakage(m, h1, h2); m.leak = lk; return q + lk; }
+  function gateFlowMain(m, h1, h2) {
     const T = m.T, debris = m.condition === 'Debris';
     if (m.typeId === 'crest') return weir(h1, h2, T.b, m.z, T.cw) * (debris ? 0.6 : 1);
     if (m.typeId === 'flap') {
@@ -154,7 +169,9 @@
       if (sens.v > T.setpoint) zt = T.setpoint - 4 * (sens.v - T.setpoint);
       if (h2 >= T.dsLimit || h2 > sens.v - 0.02) zt = T.zmax; // also block reverse flow into the lake
       zt = clamp(zt, T.zmin, T.zmax); m.target = zt;
-      if (canMove) m.z += clamp(zt - m.z, -T.zrate, T.zrate);
+      const hleak = faultOn(m, 'Hydraulic leak');
+      if (canMove) m.z += clamp(zt - m.z, -T.zrate, hleak ? 0.002 : T.zrate);
+      if (hleak) msg += 'Cylinder seal leaking: leaf sinking faster than the power pack can raise it. ';
       if (!msg) msg = h2 >= T.dsLimit ? 'Drain high: crest raised to hold water in the lake.' : h2 > sens.v - 0.02 ? 'Drain level near the lake: crest raised to stop reverse flow.' : sens.v > T.setpoint ? 'Lowering the crest to release the rise above 1.6 m.' : 'Crest holding the lake at its normal level.';
       return msg.trim();
     }
@@ -178,6 +195,16 @@
     let { h1, h2 } = levels(m);
     m.prevPos = m.typeId === 'crest' ? m.z : m.pos; m.prevPen = m.pen;
     m.alarm = control(m, h1, h2);
+    // mechanical faults acting after the controller's move
+    if (faultOn(m, 'Brake creep') && (m.typeId === 'vertical' || m.typeId === 'radial') && m.pos > 0) {
+      const d = Math.min(m.pos, 0.08); m.pos -= d; m.creep = (m.creep || 0) + d;
+      if (m.creep > 2) m.alarm += ' Brake creep: leaf drifts down without a command; the PLC keeps re-driving it. Inspect the brake.';
+    }
+    if (faultOn(m, 'Hydraulic leak') && m.typeId === 'crest') m.z = Math.max(T.zmin, m.z - 0.004);
+    if (m.voted && m.t === FAULT_AT + 11) m.voteAt = m.t;
+    if (m.voted) m.alarm += ' Main level sensor frozen; voting switched to the backup sensor. Control continues.';
+    if (faultOn(m, 'Seal leakage') && Math.abs(m.leak || 0) > 0.005 && (m.open || 0) < 0.01) m.alarm += ' Flow past the closed gate: ' + (Math.abs(m.leak) * 1000).toFixed(0) + ' L/s. Seals need replacing.';
+    m.alarm = m.alarm.trim();
     m.pos = clamp(m.pos, 0, 100); m.pen = clamp(m.pen, 0, 100);
     const I = S.inflow(m.t) * (T.inflowScale || 1), L = S.lateral(m.t), R = S.river(m.t);
     let q = gateFlow(m, h1, h2);

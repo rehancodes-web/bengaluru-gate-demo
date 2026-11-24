@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gate assemblies and materials</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#edf2ee;color:#183932;font:16px/1.55 system-ui,sans-serif}
+  main{max-width:1410px;margin:auto;padding:24px clamp(12px,3vw,44px) 70px}
+  a{color:#176852}
+  nav{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #afc3ba;padding:0 0 13px;font-size:.88rem;flex-wrap:wrap}
+  h1{font-size:clamp(34px,5vw,60px);letter-spacing:-.06em;line-height:1.03;margin:26px 0 10px}
+  h2{line-height:1.15;letter-spacing:-.03em;margin:0 0 10px}h3{margin:0 0 6px}
+  p{margin:0 0 12px}
+  button,select,input{font:inherit}
+  button,select{background:#fff;border:1px solid #97afa3;border-radius:5px;padding:7px 10px;color:inherit;cursor:pointer}
+  :focus-visible{outline:3px solid #e0a33a;outline-offset:2px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0}
+  .tabs button[aria-selected=true]{background:#17372f;color:#fff;border-color:#17372f}
+  .viewer{display:grid;grid-template-columns:minmax(0,3.2fr) minmax(260px,1fr);gap:0;border:1px solid #b9cbc2;border-radius:12px;overflow:hidden;background:#fff}
+  .stage{background:#17372f;position:relative;min-height:420px;outline:none}
+  .stage svg{width:100%;height:auto;display:block}
+  .panel{padding:20px;display:flex;flex-direction:column;gap:10px}
+  .panel select{width:100%}
+  .panel hr{width:100%;border:0;border-top:1px solid #d6e1db;margin:6px 0}
+  .panel dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:.92rem}
+  .panel dt{color:#4d6a62}.panel dd{margin:0}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  input[type=range]{width:100%;accent-color:#c96a2b}
+  .meta{color:#4d6a62;font-size:.92rem}
+  section.chapter{margin-top:34px}
+  .tab{overflow-x:auto;background:#fff;border:1px solid #c9d8d0;border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:.9rem}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #e1eae5;vertical-align:top}
+  th{background:#e3eee8;position:sticky;top:0}
+  tr.sel td{background:#fff6dc}
+  td small{color:#4d6a62}
+  ol.steps{padding-left:22px}ol.steps li{margin:4px 0}
+  .mats{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .mat{background:#fff;border:1px solid #c9d8d0;border-radius:10px;padding:14px 16px}
+  .mat h3{font-size:1rem}.mat p{font-size:.9rem;margin:0 0 6px}.mat b{font-weight:600}
+  .note{background:#fff8e6;border-left:4px solid #e0a33a;padding:10px 14px;border-radius:0 8px 8px 0;font-size:.92rem}
+  #drawing .prim{cursor:pointer}
+  #drawing .tag rect{fill:#203f37;stroke:#7fa596}
+  #drawing .tag text{fill:#eaf4ef;font:600 13px system-ui}
+  #drawing .tag.on rect{fill:#e0a33a;stroke:#ffd98a}#drawing .tag.on text{fill:#1d2a26}
+  @media(max-width:900px){.viewer{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <nav><a href="gate-types.html">← Gate types and floods</a><span><a href="#bom">Bill of materials</a> · <a href="#steps">Assembly sequence</a> · <a href="#materials">Materials guide</a></span></nav>
+  <h1>Gate assemblies and materials</h1>
+  <p>Every part of each gate type: what it is made of, how big it is, how it is protected and why. Scroll over the drawing to separate the parts, select one to inspect it. Sizes match the illustrative gates in the simulator; the gate designer confirms grades and sections against the governing codes.</p>
+
+  <div class="tabs" role="tablist" aria-label="Gate type" id="tabs"></div>
+
+  <div class="viewer">
+    <div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded assembly. Up and down arrows change the separation.">
+      <svg id="drawing" role="img" aria-label="Exploded isometric assembly of the selected gate"></svg>
+    </div>
+    <div class="panel">
+      <h2 id="gname"></h2><p class="meta" id="gsize"></p>
+      <label for="pick">Inspect component</label><select id="pick"></select>
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="labelAll" style="width:auto"> Label all</label>
+      <hr>
+      <h3 id="pname"></h3>
+      <dl id="pinfo"></dl>
+      <hr>
+      <label for="sep">Assembly separation <output id="pct"></output></label>
+      <input id="sep" type="range" min="0" max="100" value="60">
+      <div class="btns"><button id="assemble">Assemble</button><button id="explode">Explode fully</button></div>
+    </div>
+  </div>
+
+  <section class="chapter" id="bom"><h2>Bill of materials</h2><p class="meta" id="bomnote"></p><div class="tab"><table><thead><tr><th>Part</th><th>Qty</th><th>Material and grade</th><th>Size and specification</th><th>Protection</th><th>What it does</th><th>Maintenance</th></tr></thead><tbody id="bomrows"></tbody></table></div></section>
+
+  <section class="chapter" id="steps"><h2>Assembly and installation sequence</h2><ol class="steps" id="steplist"></ol></section>
+
+  <section class="chapter" id="materials"><h2>Materials guide</h2>
+    <p>Bengaluru's lakes and drains often carry untreated sewage: low dissolved oxygen, hydrogen sulphide, grease and garbage. That decides most material choices below.</p>
+    <div class="mats" id="mats"></div>
+    <h3 style="margin-top:22px">Rules that apply to every gate</h3>
+    <ul>
+      <li><b>Don't mix metals in water without isolation.</b> Stainless bolted directly to carbon steel or aluminium corrodes the less noble metal. Use insulating washers and sleeves, or keep wet parts all stainless.</li>
+      <li><b>Never run stainless against stainless.</b> Screws, pins and nuts gall and seize. Pair a hard stainless pin or screw with a bronze or self-lubricating bush.</li>
+      <li><b>Pickle and passivate every stainless weld.</b> Heat tint left on welds rusts in lake water.</li>
+      <li><b>Keep electrics dry.</b> Motors, panels and power units go above the highest recorded flood level plus 0.5 m; anything that can flood is IP68.</li>
+      <li><b>Design for the crew.</b> Grease points, seal clamps and bushes must be reachable from a platform, and the leaf must be lockable for maintenance.</li>
+    </ul>
+    <p class="note" id="standards"></p>
+  </section>
+</main>
+
+<script src="gate-parts.js"></script>
+<script>
+(function () {
+  const GP = window.GateParts, $ = id => document.getElementById(id), NS = 'http://www.w3.org/2000/svg';
+  const ids = Object.keys(GP.TYPES);
+  let type = ids[0], sel = '', sep = 0.6;
+
+  // tabs
+  ids.forEach((id, i) => { const b = document.createElement('button'); b.setAttribute('role', 'tab'); b.id = 'tab-' + id; b.textContent = GP.TYPES[id].title; b.setAttribute('aria-selected', i === 0); b.onclick = () => setType(id); $('tabs').appendChild(b); });
+  $('tabs').addEventListener('keydown', e => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; const n = ids[(ids.indexOf(type) + d + ids.length) % ids.length]; setType(n); $('tab-' + n).focus(); });
+  $('pick').onchange = () => choose($('pick').value);
+  $('labelAll').onchange = render;
+  $('sep').oninput = () => { sep = $('sep').value / 100; render(); };
+  $('assemble').onclick = () => setSep(0); $('explode').onclick = () => setSep(1);
+  $('stage').addEventListener('wheel', e => { e.preventDefault(); setSep(Math.min(1, Math.max(0, sep + (e.deltaY > 0 ? 0.05 : -0.05)))); }, { passive: false });
+  $('stage').addEventListener('keydown', e => { if (e.key === 'ArrowUp') { setSep(Math.min(1, sep + 0.05)); e.preventDefault(); } if (e.key === 'ArrowDown') { setSep(Math.max(0, sep - 0.05)); e.preventDefault(); } });
+  function setSep(v) { sep = v; $('sep').value = Math.round(v * 100); render(); }
+
+  // ---------- isometric projection ----------
+  const C30 = Math.cos(Math.PI / 6), S30 = 0.5;
+  const P = (x, y, z) => [(x - y) * C30, (x + y) * S30 - z];
+  function shade(hex, f) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; r = Math.min(255, Math.round(r * f)); g = Math.min(255, Math.round(g * f)); b = Math.min(255, Math.round(b * f)); return `rgb(${r},${g},${b})`; }
+  function prims(T) { // flatten parts into primitives with their explode offsets applied
+    const out = [];
+    T.parts.forEach(p => p.g.forEach(g => { const e = g.e || p.explode || [0, 0, 0]; out.push({ part: p.id, color: p.color, g, ox: e[0] * sep * 1.0, oy: e[1] * sep, oz: e[2] * sep }); }));
+    return out;
+  }
+  function center(o) { const g = o.g; if (g.t === 'b') return [g.x + g.w / 2 + o.ox, g.y + g.d / 2 + o.oy, g.z + g.h / 2 + o.oz]; const a = g.axis; return [g.x + (a === 'x' ? g.h / 2 : 0) + o.ox, g.y + (a === 'y' ? g.h / 2 : 0) + o.oy, g.z + (a === 'z' ? g.h / 2 : 0) + o.oz]; }
+  function hull(pts) { pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); const lo = [], up = []; for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); } for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); } return lo.slice(0, -1).concat(up.slice(0, -1)); }
+  function polys(o, k) { // returns [{pts, fill}] in screen units
+    const g = o.g, X = g.x + o.ox, Yy = g.y + o.oy, Z = g.z + o.oz, pr = (x, y, z) => P(x, y, z).map(v => v * k);
+    if (g.t === 'b') {
+      const x1 = X + g.w, y1 = Yy + g.d, z1 = Z + g.h;
+      return [
+        { pts: [pr(X, Yy, z1), pr(x1, Yy, z1), pr(x1, y1, z1), pr(X, y1, z1)], f: 1.12 },   // top
+        { pts: [pr(x1, Yy, Z), pr(x1, y1, Z), pr(x1, y1, z1), pr(x1, Yy, z1)], f: 0.86 },   // +x face
+        { pts: [pr(X, y1, Z), pr(x1, y1, Z), pr(x1, y1, z1), pr(X, y1, z1)], f: 0.7 }       // +y face
+      ];
+    }
+    const N = 28, r = g.r, a = g.axis, ring = s => { const pts = []; for (let i = 0; i < N; i++) { const t = i / N * Math.PI * 2, c = Math.cos(t) * r, d = Math.sin(t) * r; pts.push(a === 'z' ? pr(X + c, Yy + d, Z + s) : a === 'x' ? pr(X + s, Yy + c, Z + d) : pr(X + c, Yy + s, Z + d)); } return pts; };
+    const r0 = ring(0), r1 = ring(g.h);
+    return [{ pts: hull(r0.concat(r1)), f: 0.84 }, { pts: r1, f: 1.1 }];
+  }
+
+  function render() {
+    const T = GP.TYPES[type], svg = $('drawing'), labelAll = $('labelAll').checked;
+    svg.textContent = '';
+    // fixed scale per gate, fitted at full explosion so the view doesn't jump while separating
+    const keepSep = sep; sep = 1; const all = prims(T); sep = keepSep;
+    let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
+    all.forEach(o => polys(o, 1).forEach(pl => pl.pts.forEach(([x, y]) => { mnx = Math.min(mnx, x); mxx = Math.max(mxx, x); mny = Math.min(mny, y); mxy = Math.max(mxy, y); })));
+    const k = 640 / Math.max(mxx - mnx, (mxy - mny) * 1.25), pad = 200;
+    const vb = [mnx * k - pad, mny * k - 30, (mxx - mnx) * k + 2 * pad, (mxy - mny) * k + 60];
+    svg.setAttribute('viewBox', vb.join(' '));
+    const bg = document.createElementNS(NS, 'g'); svg.appendChild(bg);
+    // grid
+    const grid = document.createElementNS(NS, 'path'); let d = '';
+    for (let gx = Math.floor(vb[0] / 28) * 28; gx < vb[0] + vb[2]; gx += 28) d += `M${gx} ${vb[1]}V${vb[1] + vb[3]}`;
+    for (let gy = Math.floor(vb[1] / 28) * 28; gy < vb[1] + vb[3]; gy += 28) d += `M${vb[0]} ${gy}H${vb[0] + vb[2]}`;
+    grid.setAttribute('d', d); grid.setAttribute('stroke', '#2c5248'); grid.setAttribute('stroke-width', '.6'); grid.setAttribute('fill', 'none'); bg.appendChild(grid);
+
+    const list = prims(T).map(o => ({ o, c: center(o) })).sort((a, b) => (a.c[0] + a.c[1] + a.c[2] * 0.9) - (b.c[0] + b.c[1] + b.c[2] * 0.9));
+    const art = document.createElementNS(NS, 'g'); svg.appendChild(art);
+    const cent = {};
+    for (const { o, c } of list) {
+      const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'prim'); g.dataset.part = o.part;
+      const on = sel && o.part === sel, dim = sel && !on && !labelAll;
+      g.setAttribute('opacity', dim ? '0.45' : '1');
+      polys(o, k).forEach(pl => { const p = document.createElementNS(NS, 'polygon'); p.setAttribute('points', pl.pts.map(q => q.map(v => v.toFixed(1)).join(',')).join(' ')); p.setAttribute('fill', shade(o.color, pl.f)); p.setAttribute('stroke', on ? '#ffd75e' : 'rgba(10,30,25,.55)'); p.setAttribute('stroke-width', on ? 1.8 : 0.6); p.setAttribute('stroke-linejoin', 'round'); g.appendChild(p); });
+      g.addEventListener('click', () => choose(o.part));
+      art.appendChild(g);
+      const s = P(c[0], c[1], c[2]).map(v => v * k); (cent[o.part] = cent[o.part] || []).push(s);
+    }
+    // labels: left/right columns, evenly spaced, leaders to each part's centre
+    const show = labelAll ? T.parts.map(p => p.id) : sel ? [sel] : [];
+    const midX = vb[0] + vb[2] / 2, tagsL = [], tagsR = [];
+    show.forEach(id => { const pts = cent[id]; if (!pts) return; const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cy = pts.reduce((s, p) => s + p[1], 0) / pts.length; (cx < midX ? tagsL : tagsR).push({ id, cx, cy }); });
+    const tags = document.createElementNS(NS, 'g'); svg.appendChild(tags);
+    [[tagsL, vb[0] + 10, 'L'], [tagsR, vb[0] + vb[2] - 180, 'R']].forEach(([arr, x, side]) => {
+      arr.sort((a, b) => a.cy - b.cy);
+      const top = vb[1] + 30, step = Math.min(34, (vb[3] - 60) / Math.max(1, arr.length));
+      arr.forEach((t, i) => {
+        const y = arr.length === 1 ? Math.max(top, Math.min(vb[1] + vb[3] - 40, t.cy - 12)) : top + i * step;
+        const name = T.parts.find(p => p.id === t.id).name, g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'tag' + (t.id === sel ? ' on' : ''));
+        const ln = document.createElementNS(NS, 'line'); ln.setAttribute('x1', side === 'L' ? x + 170 : x); ln.setAttribute('y1', y + 12); ln.setAttribute('x2', t.cx); ln.setAttribute('y2', t.cy); ln.setAttribute('stroke', t.id === sel ? '#ffd75e' : '#9cc0b2'); ln.setAttribute('stroke-width', 1); g.appendChild(ln);
+        const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('cx', t.cx); dot.setAttribute('cy', t.cy); dot.setAttribute('r', 3); dot.setAttribute('fill', '#ffd75e'); g.appendChild(dot);
+        const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', 170); r.setAttribute('height', 24); r.setAttribute('rx', 4); g.appendChild(r);
+        const tx = document.createElementNS(NS, 'text'); tx.setAttribute('x', x + 8); tx.setAttribute('y', y + 16); tx.textContent = name.length > 24 ? name.slice(0, 23) + '…' : name; g.appendChild(tx);
+        g.style.cursor = 'pointer'; g.addEventListener('click', () => choose(t.id));
+        tags.appendChild(g);
+      });
+    });
+    $('pct').value = Math.round(sep * 100) + '%';
+  }
+
+  function choose(id) {
+    sel = id; $('pick').value = id;
+    const T = GP.TYPES[type], p = T.parts.find(x => x.id === id);
+    if (!p) { $('pname').textContent = 'Whole assembly'; $('pinfo').innerHTML = `<dt>Parts</dt><dd>${T.parts.length}</dd><dt>Size</dt><dd>${T.size}</dd>`; }
+    else {
+      const m = GP.MATERIALS[p.mat];
+      $('pname').textContent = p.name;
+      $('pinfo').innerHTML = `<dt>Quantity</dt><dd>${p.qty}</dd><dt>Material</dt><dd>${m ? m.name : '—'}</dd><dt>Specification</dt><dd>${p.spec}</dd><dt>Protection</dt><dd>${p.prot}</dd><dt>What it does</dt><dd>${p.role}</dd><dt>Maintenance</dt><dd>${p.maint}</dd>` + (m ? `<dt>Why this material</dt><dd>${m.why}</dd>` : '');
+    }
+    document.querySelectorAll('#bomrows tr').forEach(tr => tr.classList.toggle('sel', tr.dataset.part === id));
+    render();
+  }
+
+  function setType(id) {
+    type = id; sel = '';
+    ids.forEach(x => { const b = $('tab-' + x); b.setAttribute('aria-selected', x === id); b.tabIndex = x === id ? 0 : -1; });
+    const T = GP.TYPES[id];
+    $('gname').textContent = T.title; $('gsize').textContent = T.size;
+    $('pick').innerHTML = '<option value="">Whole assembly</option>' + T.parts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    $('bomnote').textContent = T.title + ': ' + T.size + '. ' + T.parts.length + ' assemblies. Select a row to highlight it in the drawing.';
+    $('bomrows').innerHTML = T.parts.map(p => { const m = GP.MATERIALS[p.mat]; return `<tr data-part="${p.id}" style="cursor:pointer"><td><b>${p.name}</b></td><td>${p.qty}</td><td>${m ? m.name : '—'}</td><td>${p.spec}</td><td>${p.prot}</td><td>${p.role}</td><td><small>${p.maint}</small></td></tr>`; }).join('');
+    document.querySelectorAll('#bomrows tr').forEach(tr => tr.onclick = () => { choose(tr.dataset.part); $('stage').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    $('steplist').innerHTML = T.steps.map(s => `<li>${s}</li>`).join('');
+    choose('');
+  }
+
+  $('mats').innerHTML = Object.values(GP.MATERIALS).map(m => `<div class="mat"><h3>${m.name}</h3><p><b>Used for:</b> ${m.use}</p><p><b>Why:</b> ${m.why}</p><p><b>Watch for:</b> ${m.watch}</p></div>`).join('');
+  $('standards').textContent = GP.STANDARDS;
+  setType(type);
+})();
+</script>
+</body>
+</html>

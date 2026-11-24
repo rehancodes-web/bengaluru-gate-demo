@@ -125,6 +125,27 @@ ok(runTo('float','High river / backflow','Healthy').tot.back > runTo('vertical',
 ok(runTo('crest','High river / backflow','Healthy').tot.back < runTo('crest','High river / backflow','Gate jam').tot.back, 'crest gate rises to block reverse flow');
 ok(fs.readFileSync(path.join(__dirname,'gate-types.html'),'utf8').includes('src="gate-types.js"'), 'gate types page loads its model');
 
+// Failure cases added from FAILURE_ANALYSIS.md
+ok(runTo('vertical','High river / backflow','Seal leakage').tot.back > runTo('vertical','High river / backflow','Healthy').tot.back + 10, 'worn seals let backflow past a closed gate');
+{ const a = runTo('vertical','Cloudburst','Sensor failure, backup sensor'), h = runTo('vertical','Cloudburst','Healthy'), f = runTo('vertical','Cloudburst','Level sensor failure');
+  const peak = m => Math.max(...m.hist.map(p => p.h1));
+  ok(Math.abs(peak(a) - peak(h)) < 0.01 && peak(f) > peak(a) + 0.05, 'backup sensor keeps control running; a single failed sensor forces a hold');
+  ok(/voting switched to the backup/.test(a.alarm), 'voting switch reported'); }
+ok(runTo('flap','Monsoon storm','Power cut, backup starts').tot.spill1 < runTo('flap','Monsoon storm','Power cut').tot.spill1, 'backup generator that starts prevents street-drain flooding');
+{ const c = runTo('vertical','Cloudburst','Brake creep'); ok(/Brake creep/.test(c.alarm), 'brake creep detected and reported');
+  ok(Math.abs(Math.max(...c.hist.map(p => p.h1)) - Math.max(...runTo('vertical','Cloudburst','Healthy').hist.map(p => p.h1))) < 0.05, 'PLC corrects brake creep so levels stay close to healthy'); }
+{ const leak = runTo('crest','High river / backflow','Hydraulic leak'); ok(leak.tot.back > runTo('crest','High river / backflow','Healthy').tot.back + 1000 && leak.z <= GT.TYPES.crest.zmin + 1e-9, 'crest cylinder leak drops the leaf and lets backflow into the lake'); }
+ok(Math.max(...runTo('vertical','Upstream lake releases at the peak','Healthy').hist.map(p => p.h2)) > Math.max(...runTo('vertical','Monsoon storm','Healthy').hist.map(p => p.h2)) + 0.2, 'uncoordinated upstream release raises the downstream drain');
+
+// Assemblies and materials (gate-parts.js)
+const GP = require('./gate-parts.js');
+ok(Object.keys(GP.TYPES).join() === Object.keys(GT.TYPES).join(), 'an assembly for every gate type');
+for (const [id, T] of Object.entries(GP.TYPES)) {
+  ok(T.parts.length >= 10 && T.steps.length >= 5, id + ': parts list and assembly sequence');
+  for (const p of T.parts) ok(GP.MATERIALS[p.mat] && p.spec && p.prot && p.role && p.maint && p.qty && p.g.length > 0, id + ' / ' + p.name + ': material, specification, protection, role, maintenance and geometry');
+}
+ok(fs.readFileSync(path.join(__dirname,'gate-assembly.html'),'utf8').includes('src="gate-parts.js"'), 'assembly page loads its data');
+
 // Mechanism and flow-at-gate calculations
 ok(Math.abs(GT.plateThrust(1.0, 0, 0, 2) - 1000*9.81*2*0.5) < 1e-6, 'hydrostatic thrust: 1 m of water on a 2 m plate is 9.81 kN');
 ok(GT.plateThrust(1.0, 1.0, 0, 2) === 0, 'no net thrust with equal levels');
