@@ -138,13 +138,17 @@ ok(runTo('flap','Monsoon storm','Power cut, backup starts').tot.spill1 < runTo('
 ok(Math.max(...runTo('vertical','Upstream lake releases at the peak','Healthy').hist.map(p => p.h2)) > Math.max(...runTo('vertical','Monsoon storm','Healthy').hist.map(p => p.h2)) + 0.2, 'uncoordinated upstream release raises the downstream drain');
 
 // Assemblies and materials (gate-parts.js)
-const GP = require('./gate-parts.js');
-ok(Object.keys(GP.TYPES).join() === Object.keys(GT.TYPES).join(), 'an assembly for every gate type');
+const GP = require('./gate-detail.js');
+ok(Object.keys(GT.TYPES).every(id => GP.TYPES[id]) && GP.TYPES.bench, 'an assembly for every gate type plus the bench prototype');
 for (const [id, T] of Object.entries(GP.TYPES)) {
   ok(T.parts.length >= 10 && T.steps.length >= 5, id + ': parts list and assembly sequence');
   for (const p of T.parts) ok(GP.MATERIALS[p.mat] && p.spec && p.prot && p.role && p.maint && p.qty && p.g.length > 0, id + ' / ' + p.name + ': material, specification, protection, role, maintenance and geometry');
 }
-ok(fs.readFileSync(path.join(__dirname,'gate-assembly.html'),'utf8').includes('src="gate-parts.js"'), 'assembly page loads its data');
+{ const h = fs.readFileSync(path.join(__dirname,'gate-assembly.html'),'utf8'); ok(h.includes('src="gate-parts.js"') && h.includes('src="gate-detail.js"'), 'assembly page loads parts and detail'); }
+{ const ids = Object.values(GP.TYPES).flatMap(T => T.parts.map(p => p.id)); ok(Object.values(GP.TYPES).every(T => new Set(T.parts.map(p => p.id)).size === T.parts.length), 'part ids unique within each assembly'); }
+ok(['gear','ring','worm'].every(t => Object.values(GP.TYPES).some(T => T.parts.some(p => p.g.some(g => g.t === t[0])))), 'gears, bearing rings and worms are modelled');
+for (const f of ['index.html','gate-types.html','gate-assembly.html','bench.html']) ok(fs.readFileSync(path.join(__dirname,f),'utf8').includes('site-nav.js'), f + ' has the site navigation');
+ok(/url=gate-assembly.html/.test(fs.readFileSync(path.join(__dirname,'mechanism.html'),'utf8')), 'old assembly page redirects to the new one');
 
 // Mechanism and flow-at-gate calculations
 ok(Math.abs(GT.plateThrust(1.0, 0, 0, 2) - 1000*9.81*2*0.5) < 1e-6, 'hydrostatic thrust: 1 m of water on a 2 m plate is 9.81 kN');

@@ -19,9 +19,9 @@
   .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0}
   .tabs button[aria-selected=true]{background:#17372f;color:#fff;border-color:#17372f}
   .viewer{display:grid;grid-template-columns:minmax(0,3.2fr) minmax(260px,1fr);gap:0;border:1px solid #b9cbc2;border-radius:12px;overflow:hidden;background:#fff}
-  .stage{background:#17372f;position:relative;min-height:420px;outline:none}
-  .stage svg{width:100%;height:auto;display:block}
-  .panel{padding:20px;display:flex;flex-direction:column;gap:10px}
+  .stage{background:#17372f;position:relative;height:clamp(420px,74vh,700px);overflow:hidden;outline:none;cursor:grab;touch-action:none;user-select:none}
+  .stage svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .panel{padding:20px;display:flex;flex-direction:column;gap:10px;max-height:clamp(420px,74vh,700px);overflow-y:auto;overflow-x:hidden}
   .panel select{width:100%}
   .panel hr{width:100%;border:0;border-top:1px solid #d6e1db;margin:6px 0}
   .panel dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:.92rem}
@@ -40,25 +40,28 @@
   .mats{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
   .mat{background:#fff;border:1px solid #c9d8d0;border-radius:10px;padding:14px 16px}
   .mat h3{font-size:1rem}.mat p{font-size:.9rem;margin:0 0 6px}.mat b{font-weight:600}
+  .jump{font-size:.9rem;color:#4d6a62}
+  #viewer,section.chapter{scroll-margin-top:64px}
   .note{background:#fff8e6;border-left:4px solid #e0a33a;padding:10px 14px;border-radius:0 8px 8px 0;font-size:.92rem}
   #drawing .prim{cursor:pointer}
   #drawing .tag rect{fill:#203f37;stroke:#7fa596}
-  #drawing .tag text{fill:#eaf4ef;font:600 13px system-ui}
+  #drawing .tag text{fill:#eaf4ef;font-weight:600;font-family:system-ui}
   #drawing .tag.on rect{fill:#e0a33a;stroke:#ffd98a}#drawing .tag.on text{fill:#1d2a26}
-  @media(max-width:900px){.viewer{grid-template-columns:1fr}}
+  @media(max-width:900px){.viewer{grid-template-columns:1fr}.stage{height:min(110vw,520px)}.panel{max-height:none}}
 </style>
 </head>
 <body>
+<script src="site-nav.js"></script>
 <main>
-  <nav><a href="gate-types.html">← Gate types and floods</a><span><a href="#bom">Bill of materials</a> · <a href="#steps">Assembly sequence</a> · <a href="#materials">Materials guide</a></span></nav>
+  <p class="jump">On this page: <a href="#viewer">Exploded assembly</a> · <a href="#bom">Bill of materials</a> · <a href="#steps">Assembly sequence</a> · <a href="#materials">Materials guide</a></p>
   <h1>Gate assemblies and materials</h1>
-  <p>Every part of each gate type: what it is made of, how big it is, how it is protected and why. Scroll over the drawing to separate the parts, select one to inspect it. Sizes match the illustrative gates in the simulator; the gate designer confirms grades and sections against the governing codes.</p>
+  <p>Every part of each gate type: what it is made of, how big it is, how it is protected and why. Drag the drawing to rotate it, scroll over it to separate the parts, Ctrl + scroll to zoom, and double-click any part to zoom in on it. Every gear, bearing and bolt is a selectable part. Sizes match the illustrative gates in the simulator; the gate designer confirms grades and sections against the governing codes.</p>
 
   <div class="tabs" role="tablist" aria-label="Gate type" id="tabs"></div>
 
-  <div class="viewer">
-    <div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded assembly. Up and down arrows change the separation.">
-      <svg id="drawing" role="img" aria-label="Exploded isometric assembly of the selected gate"></svg>
+  <div class="viewer" id="viewer">
+    <div id="stage" class="stage" tabindex="0" role="group" aria-label="Exploded assembly. Drag or use left and right arrows to rotate; up and down arrows change the separation.">
+      <svg id="drawing" overflow="visible" role="img" aria-label="Exploded isometric assembly of the selected gate"></svg>
     </div>
     <div class="panel">
       <h2 id="gname"></h2><p class="meta" id="gsize"></p>
@@ -71,6 +74,11 @@
       <label for="sep">Assembly separation <output id="pct"></output></label>
       <input id="sep" type="range" min="0" max="100" value="60">
       <div class="btns"><button id="assemble">Assemble</button><button id="explode">Explode fully</button></div>
+      <hr>
+      <label>View <small style="color:#4d6a62">drag the drawing to rotate · arrow keys turn · Page Up/Down tilt</small></label>
+      <div class="btns"><button id="resetView">3D</button><button id="viewFront">Front</button><button id="viewSide">Side</button><button id="viewTop">Top</button></div>
+      <label>Zoom <small style="color:#4d6a62">Ctrl + scroll · Shift-drag or right-drag to pan · double-click a part to zoom to it</small></label>
+      <div class="btns"><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomFit">Fit</button><button id="focus">Zoom to selected part</button></div>
     </div>
   </div>
 
@@ -94,6 +102,7 @@
 </main>
 
 <script src="gate-parts.js"></script>
+<script src="gate-detail.js"></script>
 <script>
 (function () {
   const GP = window.GateParts, $ = id => document.getElementById(id), NS = 'http://www.w3.org/2000/svg';
@@ -107,13 +116,41 @@
   $('labelAll').onchange = render;
   $('sep').oninput = () => { sep = $('sep').value / 100; render(); };
   $('assemble').onclick = () => setSep(0); $('explode').onclick = () => setSep(1);
-  $('stage').addEventListener('wheel', e => { e.preventDefault(); setSep(Math.min(1, Math.max(0, sep + (e.deltaY > 0 ? 0.05 : -0.05)))); }, { passive: false });
+  $('stage').addEventListener('wheel', e => { e.preventDefault(); if (e.ctrlKey || e.metaKey) setZoom(zoom * (e.deltaY > 0 ? 0.85 : 1.18), toSvg(e)); else setSep(Math.min(1, Math.max(0, sep + (e.deltaY > 0 ? 0.05 : -0.05)))); }, { passive: false });
+  $('stage').addEventListener('contextmenu', e => e.preventDefault());
+  $('stage').addEventListener('dblclick', e => { const g = e.target.closest('.prim'); if (g) { choose(g.dataset.part); focusPart(g.dataset.part); } });
   $('stage').addEventListener('keydown', e => { if (e.key === 'ArrowUp') { setSep(Math.min(1, sep + 0.05)); e.preventDefault(); } if (e.key === 'ArrowDown') { setSep(Math.max(0, sep - 0.05)); e.preventDefault(); } });
   function setSep(v) { sep = v; $('sep').value = Math.round(v * 100); render(); }
+  let drag = null, dragMoved = false, raf = 0, zoom = 1, pan = [0, 0], lastVb = [0, 0, 1, 1], lastK = 1;
+  const setZoom = (z, about) => { const nz = Math.min(40, Math.max(0.6, z)); if (about) { const f = 1 / zoom - 1 / nz; pan[0] += (about[0] - (lastVb[0] + lastVb[2] / 2)) * f * zoom; pan[1] += (about[1] - (lastVb[1] + lastVb[3] / 2)) * f * zoom; } zoom = nz; render(); };
+  const toSvg = e => { const r = $('drawing').getBoundingClientRect(), sc = Math.max(lastVb[2] / r.width, lastVb[3] / r.height), ox = (r.width - lastVb[2] / sc) / 2, oy = (r.height - lastVb[3] / sc) / 2; return [lastVb[0] + (e.clientX - r.left - ox) * sc, lastVb[1] + (e.clientY - r.top - oy) * sc]; };
+  function focusPart(id) { const pts = []; document.querySelectorAll('#drawing .prim').forEach(g => { if (g.dataset.part !== id) return; const b = g.getBBox(); pts.push([b.x, b.y], [b.x + b.width, b.y + b.height]); }); if (!pts.length) return; const x0 = Math.min(...pts.map(p => p[0])), x1 = Math.max(...pts.map(p => p[0])), y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1])); const base = [lastVb[2] * zoom, lastVb[3] * zoom]; const nz = Math.min(40, Math.max(1, 0.5 * Math.min(base[0] / Math.max(1, x1 - x0), base[1] / Math.max(1, y1 - y0)))); const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2; const c0 = [lastVb[0] + lastVb[2] / 2 - pan[0], lastVb[1] + lastVb[3] / 2 - pan[1]]; pan = [cx - c0[0], cy - c0[1]]; zoom = nz; render(); }
+  const redraw = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); };
+  $('stage').addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, yaw: view.yaw, elev: view.elev, pan: e.shiftKey || e.button === 2, p0: pan.slice() }; dragMoved = false; $('stage').setPointerCapture(e.pointerId); $('stage').style.cursor = 'grabbing'; });
+  $('stage').addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 4) dragMoved = true;
+    if (drag.pan) { const r = $('drawing').getBoundingClientRect(), sc = Math.max(lastVb[2] / r.width, lastVb[3] / r.height); pan = [drag.p0[0] - dx * sc, drag.p0[1] - dy * sc]; redraw(); return; }
+    view.yaw = drag.yaw - dx * 0.008; view.elev = Math.min(1.45, Math.max(0.05, drag.elev + dy * 0.006)); redraw(); });
+  const endDrag = e => { if (!drag) return; drag = null; $('stage').style.cursor = 'grab'; setTimeout(() => { dragMoved = false; }, 0); };
+  $('stage').addEventListener('pointerup', endDrag); $('stage').addEventListener('pointercancel', endDrag);
+  $('stage').addEventListener('keydown', e => { const k = { ArrowLeft: [0.12, 0], ArrowRight: [-0.12, 0], PageUp: [0, 0.08], PageDown: [0, -0.08] }[e.key]; if (!k) return; e.preventDefault(); view.yaw += k[0]; view.elev = Math.min(1.45, Math.max(0.05, view.elev + k[1])); render(); });
+  $('resetView').onclick = () => { view = { ...VIEW0 }; zoom = 1; pan = [0, 0]; render(); };
+  $('zoomIn').onclick = () => setZoom(zoom * 1.4); $('zoomOut').onclick = () => setZoom(zoom / 1.4);
+  $('zoomFit').onclick = () => { zoom = 1; pan = [0, 0]; render(); };
+  $('focus').onclick = () => { if (sel) focusPart(sel); };
+  $('viewFront').onclick = () => { view = { yaw: 0, elev: 0.12 }; render(); };
+  $('viewSide').onclick = () => { view = { yaw: Math.PI / 2, elev: 0.12 }; render(); };
+  $('viewTop').onclick = () => { view = { yaw: view.yaw, elev: 1.45 }; render(); };
 
-  // ---------- isometric projection ----------
-  const C30 = Math.cos(Math.PI / 6), S30 = 0.5;
-  const P = (x, y, z) => [(x - y) * C30, (x + y) * S30 - z];
+  // ---------- rotatable camera (orthographic) ----------
+  // yaw turns the model about the vertical axis; elev tilts the view above the horizon.
+  const VIEW0 = { yaw: Math.PI / 4, elev: 0.6 };
+  let view = { ...VIEW0 }, pivot = [0, 0, 0];
+  const rot = (x, y, z) => { const c = Math.cos(view.yaw), sn = Math.sin(view.yaw), X = x - pivot[0], Yv = y - pivot[1], Z = z - pivot[2]; return [X * c - Yv * sn, X * sn + Yv * c, Z]; };
+  const P = (x, y, z) => { const [a, b, c] = rot(x, y, z); return [a, b * Math.sin(view.elev) - c * Math.cos(view.elev)]; };
+  const depth = (x, y, z) => { const [, b, c] = rot(x, y, z); return b * Math.cos(view.elev) + c * Math.sin(view.elev); };
+  // how much a world-space normal faces the viewer (> 0 visible), and a simple light for shading
+  const facing = (nx, ny, nz) => { const c = Math.cos(view.yaw), sn = Math.sin(view.yaw), b = nx * sn + ny * c; return b * Math.cos(view.elev) + nz * Math.sin(view.elev); };
+  const light = (nx, ny, nz) => 0.62 + 0.5 * Math.max(0, nz * 0.8 + (nx * 0.45 - ny * 0.35));
   function shade(hex, f) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; r = Math.min(255, Math.round(r * f)); g = Math.min(255, Math.round(g * f)); b = Math.min(255, Math.round(b * f)); return `rgb(${r},${g},${b})`; }
   function prims(T) { // flatten parts into primitives with their explode offsets applied
     const out = [];
@@ -126,61 +163,104 @@
     const g = o.g, X = g.x + o.ox, Yy = g.y + o.oy, Z = g.z + o.oz, pr = (x, y, z) => P(x, y, z).map(v => v * k);
     if (g.t === 'b') {
       const x1 = X + g.w, y1 = Yy + g.d, z1 = Z + g.h;
-      return [
-        { pts: [pr(X, Yy, z1), pr(x1, Yy, z1), pr(x1, y1, z1), pr(X, y1, z1)], f: 1.12 },   // top
-        { pts: [pr(x1, Yy, Z), pr(x1, y1, Z), pr(x1, y1, z1), pr(x1, Yy, z1)], f: 0.86 },   // +x face
-        { pts: [pr(X, y1, Z), pr(x1, y1, Z), pr(x1, y1, z1), pr(X, y1, z1)], f: 0.7 }       // +y face
+      const faces = [
+        [[0, 0, 1], [[X, Yy, z1], [x1, Yy, z1], [x1, y1, z1], [X, y1, z1]]],
+        [[0, 0, -1], [[X, Yy, Z], [x1, Yy, Z], [x1, y1, Z], [X, y1, Z]]],
+        [[1, 0, 0], [[x1, Yy, Z], [x1, y1, Z], [x1, y1, z1], [x1, Yy, z1]]],
+        [[-1, 0, 0], [[X, Yy, Z], [X, y1, Z], [X, y1, z1], [X, Yy, z1]]],
+        [[0, 1, 0], [[X, y1, Z], [x1, y1, Z], [x1, y1, z1], [X, y1, z1]]],
+        [[0, -1, 0], [[X, Yy, Z], [x1, Yy, Z], [x1, Yy, z1], [X, Yy, z1]]]
       ];
+      return faces.filter(([n]) => facing(...n) > 1e-6).map(([n, q]) => ({ pts: q.map(p => pr(...p)), f: light(...n) }));
     }
+    if (g.t === 'g' || g.t === 'r' || g.t === 'w') return polysRound(o, g, X, Yy, Z, pr);
     const N = 28, r = g.r, a = g.axis, ring = s => { const pts = []; for (let i = 0; i < N; i++) { const t = i / N * Math.PI * 2, c = Math.cos(t) * r, d = Math.sin(t) * r; pts.push(a === 'z' ? pr(X + c, Yy + d, Z + s) : a === 'x' ? pr(X + s, Yy + c, Z + d) : pr(X + c, Yy + s, Z + d)); } return pts; };
-    const r0 = ring(0), r1 = ring(g.h);
-    return [{ pts: hull(r0.concat(r1)), f: 0.84 }, { pts: r1, f: 1.1 }];
+    const r0 = ring(0), r1 = ring(g.h), ax = a === 'z' ? [0, 0, 1] : a === 'x' ? [1, 0, 0] : [0, 1, 0];
+    const cap = facing(...ax) >= 0 ? { pts: r1, f: light(...ax) } : { pts: r0, f: light(-ax[0], -ax[1], -ax[2]) };
+    return [{ pts: hull(r0.concat(r1)), f: 0.8 }, cap];
+  }
+
+  // gears (toothed outline), rings (annulus with a hole) and worms (cylinder with a visible helix)
+  function polysRound(o, g, X, Yy, Z, pr) {
+    const a = g.axis, at = (c, d, s) => a === 'z' ? pr(X + c, Yy + d, Z + s) : a === 'x' ? pr(X + s, Yy + c, Z + d) : pr(X + c, Yy + s, Z + d);
+    const circle = (r, s, n) => Array.from({ length: n }, (_, i) => { const t = i / n * Math.PI * 2; return at(Math.cos(t) * r, Math.sin(t) * r, s); });
+    const ax = a === 'z' ? [0, 0, 1] : a === 'x' ? [1, 0, 0] : [0, 1, 0], front = facing(...ax) >= 0, sCap = front ? g.h : 0, capF = front ? light(...ax) : light(-ax[0], -ax[1], -ax[2]);
+    if (g.t === 'g') {
+      const n = g.teeth, tooth = s => { const pts = []; for (let i = 0; i < n; i++) { const t0 = i / n * Math.PI * 2, d = Math.PI * 2 / n; [[0, 0.86], [0.18, 1], [0.5, 1], [0.68, 0.86]].forEach(([f, k]) => { const t = t0 + f * d; pts.push(at(Math.cos(t) * g.r * k, Math.sin(t) * g.r * k, s)); }); } return pts; };
+      const t0 = tooth(0), t1 = tooth(g.h);
+      return [{ pts: hull(t0.concat(t1)), f: 0.78 }, { pts: front ? t1 : t0, f: capF }, { pts: circle(g.r * 0.28, sCap, 20), f: capF * 0.78 }, { pts: circle(g.r * 0.08, sCap, 12), f: 0.4 }];
+    }
+    if (g.t === 'r') {
+      const o0 = circle(g.r, 0, 32), o1 = circle(g.r, g.h, 32);
+      return [{ pts: hull(o0.concat(o1)), f: 0.8 }, { pts: front ? o1 : o0, hole: circle(g.ri, sCap, 32), f: capF }];
+    }
+    // worm / helical groove
+    const c0 = circle(g.r, 0, 28), c1 = circle(g.r, g.h, 28), helix = [];
+    const steps = Math.max(40, g.turns * 24);
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps, t = u * g.turns * Math.PI * 2, c = Math.cos(t), d = Math.sin(t);
+      const n = a === 'z' ? [c, d, 0] : a === 'x' ? [0, c, d] : [c, 0, d];
+      helix.push(facing(...n) > 0 ? at(c * g.r * 1.03, d * g.r * 1.03, u * g.h) : null);
+    }
+    return [{ pts: hull(c0.concat(c1)), f: 0.82 }, { pts: front ? c1 : c0, f: capF }, { line: helix }];
   }
 
   function render() {
     const T = GP.TYPES[type], svg = $('drawing'), labelAll = $('labelAll').checked;
     svg.textContent = '';
-    // fixed scale per gate, fitted at full explosion so the view doesn't jump while separating
+    // fixed scale per gate from a bounding sphere at full explosion, so neither separating nor rotating changes the zoom
     const keepSep = sep; sep = 1; const all = prims(T); sep = keepSep;
-    let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
-    all.forEach(o => polys(o, 1).forEach(pl => pl.pts.forEach(([x, y]) => { mnx = Math.min(mnx, x); mxx = Math.max(mxx, x); mny = Math.min(mny, y); mxy = Math.max(mxy, y); })));
-    const k = 640 / Math.max(mxx - mnx, (mxy - mny) * 1.25), pad = 200;
-    const vb = [mnx * k - pad, mny * k - 30, (mxx - mnx) * k + 2 * pad, (mxy - mny) * k + 60];
+    const corners = all.flatMap(o => { const g = o.g, X = g.x + o.ox, Yy = g.y + o.oy, Z = g.z + o.oz; if (g.t === 'b') return [[X, Yy, Z], [X + g.w, Yy + g.d, Z + g.h]]; const L = g.h, r = g.r, a = g.axis; return [[X - r, Yy - r, Z - r], [X + r + (a === 'x' ? L : 0), Yy + r + (a === 'y' ? L : 0), Z + r + (a === 'z' ? L : 0)]]; });
+    const mn = [0, 1, 2].map(i => Math.min(...corners.map(c => c[i]))), mx = [0, 1, 2].map(i => Math.max(...corners.map(c => c[i])));
+    pivot = mn.map((v, i) => (v + mx[i]) / 2);
+    const rad = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) / 2 * 0.78, k = 400 / rad, pad = 190;
+    const vb0 = [-rad * k - pad, -rad * k * 0.92, 2 * rad * k + 2 * pad, 2 * rad * k * 1.84 / 2 + 40];
+    const vb = [vb0[0] + vb0[2] / 2 * (1 - 1 / zoom) + pan[0], vb0[1] + vb0[3] / 2 * (1 - 1 / zoom) + pan[1], vb0[2] / zoom, vb0[3] / zoom];
+    lastVb = vb; lastK = k;
     svg.setAttribute('viewBox', vb.join(' '));
     const bg = document.createElementNS(NS, 'g'); svg.appendChild(bg);
     // grid
     const grid = document.createElementNS(NS, 'path'); let d = '';
-    for (let gx = Math.floor(vb[0] / 28) * 28; gx < vb[0] + vb[2]; gx += 28) d += `M${gx} ${vb[1]}V${vb[1] + vb[3]}`;
-    for (let gy = Math.floor(vb[1] / 28) * 28; gy < vb[1] + vb[3]; gy += 28) d += `M${vb[0]} ${gy}H${vb[0] + vb[2]}`;
-    grid.setAttribute('d', d); grid.setAttribute('stroke', '#2c5248'); grid.setAttribute('stroke-width', '.6'); grid.setAttribute('fill', 'none'); bg.appendChild(grid);
+    const G = [vb[0] - vb[2], vb[1] - vb[3], vb[2] * 3, vb[3] * 3]; // grid well beyond the viewBox so it fills any stage shape
+    for (let gx = Math.floor(G[0] / 28) * 28; gx < G[0] + G[2]; gx += 28) d += `M${gx} ${G[1]}V${G[1] + G[3]}`;
+    for (let gy = Math.floor(G[1] / 28) * 28; gy < G[1] + G[3]; gy += 28) d += `M${G[0]} ${gy}H${G[0] + G[2]}`;
+    grid.setAttribute('d', d); grid.setAttribute('stroke', '#2c5248'); grid.setAttribute('stroke-width', '.6'); grid.setAttribute('vector-effect', 'non-scaling-stroke'); grid.setAttribute('fill', 'none'); bg.appendChild(grid);
 
-    const list = prims(T).map(o => ({ o, c: center(o) })).sort((a, b) => (a.c[0] + a.c[1] + a.c[2] * 0.9) - (b.c[0] + b.c[1] + b.c[2] * 0.9));
+    const list = prims(T).map(o => ({ o, c: center(o) })).sort((a, b) => depth(...a.c) - depth(...b.c));
     const art = document.createElementNS(NS, 'g'); svg.appendChild(art);
     const cent = {};
     for (const { o, c } of list) {
       const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'prim'); g.dataset.part = o.part;
       const on = sel && o.part === sel, dim = sel && !on && !labelAll;
       g.setAttribute('opacity', dim ? '0.45' : '1');
-      polys(o, k).forEach(pl => { const p = document.createElementNS(NS, 'polygon'); p.setAttribute('points', pl.pts.map(q => q.map(v => v.toFixed(1)).join(',')).join(' ')); p.setAttribute('fill', shade(o.color, pl.f)); p.setAttribute('stroke', on ? '#ffd75e' : 'rgba(10,30,25,.55)'); p.setAttribute('stroke-width', on ? 1.8 : 0.6); p.setAttribute('stroke-linejoin', 'round'); g.appendChild(p); });
-      g.addEventListener('click', () => choose(o.part));
+      polys(o, k).forEach(pl => {
+        if (pl.line) { // helix: break into visible runs
+          let d = '', pen = false; pl.line.forEach(q => { if (!q) { pen = false; return; } d += (pen ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1); pen = true; });
+          const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', shade(o.color, 0.45)); p.setAttribute('stroke-width', 1.2); p.setAttribute('vector-effect', 'non-scaling-stroke'); g.appendChild(p); return;
+        }
+        const ring = q => 'M' + q.map(v => v[0].toFixed(1) + ' ' + v[1].toFixed(1)).join('L') + 'Z';
+        const p = document.createElementNS(NS, 'path'); p.setAttribute('d', ring(pl.pts) + (pl.hole ? ring(pl.hole) : '')); p.setAttribute('fill-rule', 'evenodd');
+        p.setAttribute('fill', shade(o.color, pl.f)); p.setAttribute('stroke', on ? '#ffd75e' : 'rgba(10,30,25,.55)'); p.setAttribute('stroke-width', on ? 1.8 : 0.6); p.setAttribute('vector-effect', 'non-scaling-stroke'); p.setAttribute('stroke-linejoin', 'round'); g.appendChild(p);
+      });
+      g.addEventListener('click', () => { if (!dragMoved) choose(o.part); });
       art.appendChild(g);
       const s = P(c[0], c[1], c[2]).map(v => v * k); (cent[o.part] = cent[o.part] || []).push(s);
     }
     // labels: left/right columns, evenly spaced, leaders to each part's centre
     const show = labelAll ? T.parts.map(p => p.id) : sel ? [sel] : [];
-    const midX = vb[0] + vb[2] / 2, tagsL = [], tagsR = [];
+    const midX = vb[0] + vb[2] / 2, tagsL = [], tagsR = [], U = 1 / zoom; // label sizes stay constant on screen at any zoom
     show.forEach(id => { const pts = cent[id]; if (!pts) return; const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cy = pts.reduce((s, p) => s + p[1], 0) / pts.length; (cx < midX ? tagsL : tagsR).push({ id, cx, cy }); });
     const tags = document.createElementNS(NS, 'g'); svg.appendChild(tags);
-    [[tagsL, vb[0] + 10, 'L'], [tagsR, vb[0] + vb[2] - 180, 'R']].forEach(([arr, x, side]) => {
+    [[tagsL, vb[0] + 10 * U, 'L'], [tagsR, vb[0] + vb[2] - 180 * U, 'R']].forEach(([arr, x, side]) => {
       arr.sort((a, b) => a.cy - b.cy);
-      const top = vb[1] + 30, step = Math.min(34, (vb[3] - 60) / Math.max(1, arr.length));
+      const top = vb[1] + 30 * U, step = Math.min(34 * U, (vb[3] - 60 * U) / Math.max(1, arr.length));
       arr.forEach((t, i) => {
-        const y = arr.length === 1 ? Math.max(top, Math.min(vb[1] + vb[3] - 40, t.cy - 12)) : top + i * step;
+        const y = arr.length === 1 ? Math.max(top, Math.min(vb[1] + vb[3] - 40 * U, t.cy - 12 * U)) : top + i * step;
         const name = T.parts.find(p => p.id === t.id).name, g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'tag' + (t.id === sel ? ' on' : ''));
-        const ln = document.createElementNS(NS, 'line'); ln.setAttribute('x1', side === 'L' ? x + 170 : x); ln.setAttribute('y1', y + 12); ln.setAttribute('x2', t.cx); ln.setAttribute('y2', t.cy); ln.setAttribute('stroke', t.id === sel ? '#ffd75e' : '#9cc0b2'); ln.setAttribute('stroke-width', 1); g.appendChild(ln);
-        const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('cx', t.cx); dot.setAttribute('cy', t.cy); dot.setAttribute('r', 3); dot.setAttribute('fill', '#ffd75e'); g.appendChild(dot);
-        const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', 170); r.setAttribute('height', 24); r.setAttribute('rx', 4); g.appendChild(r);
-        const tx = document.createElementNS(NS, 'text'); tx.setAttribute('x', x + 8); tx.setAttribute('y', y + 16); tx.textContent = name.length > 24 ? name.slice(0, 23) + '…' : name; g.appendChild(tx);
+        const ln = document.createElementNS(NS, 'line'); ln.setAttribute('x1', side === 'L' ? x + 170 * U : x); ln.setAttribute('y1', y + 12 * U); ln.setAttribute('x2', t.cx); ln.setAttribute('y2', t.cy); ln.setAttribute('stroke', t.id === sel ? '#ffd75e' : '#9cc0b2'); ln.setAttribute('stroke-width', U); g.appendChild(ln);
+        const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('cx', t.cx); dot.setAttribute('cy', t.cy); dot.setAttribute('r', 3 * U); dot.setAttribute('fill', '#ffd75e'); g.appendChild(dot);
+        const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', 170 * U); r.setAttribute('height', 24 * U); r.setAttribute('rx', 4 * U); r.setAttribute('stroke-width', U); g.appendChild(r);
+        const tx = document.createElementNS(NS, 'text'); tx.setAttribute('x', x + 8 * U); tx.setAttribute('y', y + 16 * U); tx.setAttribute('font-size', 13 * U); tx.textContent = name.length > 24 ? name.slice(0, 23) + '…' : name; g.appendChild(tx);
         g.style.cursor = 'pointer'; g.addEventListener('click', () => choose(t.id));
         tags.appendChild(g);
       });
@@ -202,7 +282,7 @@
   }
 
   function setType(id) {
-    type = id; sel = '';
+    type = id; sel = ''; zoom = 1; pan = [0, 0];
     ids.forEach(x => { const b = $('tab-' + x); b.setAttribute('aria-selected', x === id); b.tabIndex = x === id ? 0 : -1; });
     const T = GP.TYPES[id];
     $('gname').textContent = T.title; $('gsize').textContent = T.size;
@@ -216,7 +296,8 @@
 
   $('mats').innerHTML = Object.values(GP.MATERIALS).map(m => `<div class="mat"><h3>${m.name}</h3><p><b>Used for:</b> ${m.use}</p><p><b>Why:</b> ${m.why}</p><p><b>Watch for:</b> ${m.watch}</p></div>`).join('');
   $('standards').textContent = GP.STANDARDS;
-  setType(type);
+  const fromHash = location.hash.slice(1); setType(GP.TYPES[fromHash] ? fromHash : type);
+  addEventListener('hashchange', () => { const h = location.hash.slice(1); if (GP.TYPES[h]) setType(h); });
 })();
 </script>
 </body>

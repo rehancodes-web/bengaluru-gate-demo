@@ -17,7 +17,7 @@ Select **Lake rising**, then **Advance 1 second**. The controller requests about
 
 Each case supports healthy equipment, an invalid stage sensor, a jammed gate, loss of telemetry and a local stop. Export a run to CSV before resetting to compare results.
 
-**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 900 checks, including all 196 scenario, equipment-condition and controller combinations and all 100 gate-type combinations with an exact water balance.
+**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 986 checks, including all 196 scenario, equipment-condition and controller combinations and all 100 gate-type combinations with an exact water balance.
 
 ## Gate types compared
 
@@ -29,7 +29,7 @@ Six further failures from the failure analysis can be selected: seal leakage, br
 
 ## Gate assemblies and materials
 
-`gate-assembly.html` shows an exploded isometric assembly of each gate type. Scroll to separate the parts and select one to see its material and grade, size, protection, purpose and maintenance. Each type has a full bill of materials and an installation sequence, and a materials guide explains the choices for Bengaluru's sewage-polluted water (stainless 304, 316L, 431 and duplex; coated IS 2062 steel; EPDM and neoprene seals; bronze and self-lubricating bushes; UHMW-PE; A4-70 fasteners; M30 concrete) with the Indian Standards commonly used. Sizes are illustrative; the gate designer confirms grades and sections. Dimensions are illustrative and storage is simplified to a constant plan area.
+`gate-assembly.html` shows an exploded 3D assembly of each gate type. Drag to rotate it (or use the 3D, Front, Side and Top views), Ctrl + scroll to zoom, double-click a part to zoom to it, scroll to separate the parts. Drives are broken down to gears, worms, bearings, couplings, motor internals, brakes, limit gear trains and every bolt row; a sixth tab shows the bench prototype and select one to see its material and grade, size, protection, purpose and maintenance. Each type has a full bill of materials and an installation sequence, and a materials guide explains the choices for Bengaluru's sewage-polluted water (stainless 304, 316L, 431 and duplex; coated IS 2062 steel; EPDM and neoprene seals; bronze and self-lubricating bushes; UHMW-PE; A4-70 fasteners; M30 concrete) with the Indian Standards commonly used. Sizes are illustrative; the gate designer confirms grades and sections. Dimensions are illustrative and storage is simplified to a constant plan area.
 
 ## Street flooding cases
 
