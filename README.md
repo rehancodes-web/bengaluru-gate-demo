@@ -17,7 +17,7 @@ Select **Lake rising**, then **Advance 1 second**. The controller requests about
 
 Each case supports healthy equipment, an invalid stage sensor, a jammed gate, loss of telemetry and a local stop. Export a run to CSV before resetting to compare results.
 
-**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 228 checks, including all 196 scenario, equipment-condition and controller combinations with an exact water balance.
+**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 237 checks, including all 196 scenario, equipment-condition and controller combinations with an exact water balance.
 
 ## Street flooding cases
 
@@ -31,7 +31,7 @@ Eight additional scenarios model runoff entering road storage. Compare blocked a
 - **Two controllers:** the original rule-based logic and a PI controller with anti-windup, to compare on the same storm.
 - **Realistic actuator:** slows above 1 m head across the gate and trips on torque above 1.5 m.
 - **Fault detection:** lake-sensor drift caught against the controller's own water balance; partial jams caught by commanded versus actual travel.
-- **Site data import:** paste surveyed stage-area curves, a calibrated discharge coefficient and measured inflow. The status line shows whether illustrative or imported data is in use.
+- **Site data import:** paste surveyed stage-area curves, a calibrated discharge coefficient, measured inflow, and the gate width, travel, crest, control levels, alarm levels and torque-trip head. The status line shows whether illustrative or imported data is in use.
 - **Bench rig link:** `GateCommissioning.ino` takes `ARM`, `POS 0-100`, `CAL`, `PULSE` and `OFF` over USB. The simulator drives it through Web Serial (desktop Chrome or Edge). Speed is limited to 2% per second, and the rig holds position if the link is silent for 3 seconds.
 
 ## Still needed before field use

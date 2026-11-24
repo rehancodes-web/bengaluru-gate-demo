@@ -33,6 +33,15 @@ let worst = 0; for (let dn = 0.2; dn < 1.0; dn += 0.002) worst = Math.max(worst,
 ok(worst < 0.02, 'smooth free/submerged transition');
 ok(run('gateFlow(1.0, 1.4, 0.3) < 0'), 'reverse flow when the drain is higher');
 
+// Site parameters: import, validation, effect on hydraulics and reset.
+run(`importSiteText(${JSON.stringify('width,3.0\nmaxLift,0.8')})`);
+ok(run('GATE_WIDTH') === 3 && run('MAX_LIFT') === 0.8 && run("siteSource") === 'imported', 'site parameters imported');
+ok(Math.abs(run('gateFlow(1.5, 0.1, 0.4)') - 0.62*3*0.4*Math.sqrt(2*9.81*1.3)) < 1e-9, 'gate width feeds the discharge equation');
+for (const bad of ['width,-1', 'setpoint,1.7', 'hhLake,2.5', 'widht,2', 'crest,abc'])
+  ok((() => { try { run(`importSiteText(${JSON.stringify(bad)})`); return false; } catch { return true; } })(), 'rejects bad site input ' + bad);
+ok(run('GATE_WIDTH') === 3, 'rejected input leaves the previous parameters');
+run('resetSite()'); ok(run('GATE_WIDTH') === 2 && run('CREST') === 2.2 && run("siteSource") === 'illustrative', 'site reset to defaults');
+
 // Every scenario x every equipment condition x both controllers: bounds and exact water balance.
 const faults = ['Healthy','Invalid stage sensor','Gate jam','Loss of telemetry','Local stop','Lake sensor drift','Partial jam'];
 let runs = 0;

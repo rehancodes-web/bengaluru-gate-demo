@@ -4,7 +4,35 @@
 
 const $ = id => document.getElementById(id);
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-const G = 9.81, GATE_WIDTH = 2.0, MAX_LIFT = 0.5, CREST = 2.2, SETPOINT = 1.55, START = 1.60, DS_LIMIT = 1.80;
+const G = 9.81;
+// ---------- Site parameters (levels in m above the outlet sill) ----------
+const DEFAULT_SITE = { width: 2.0, maxLift: 0.5, crest: 2.2, setpoint: 1.55, start: 1.60, dsLimit: 1.80, hhLake: 2.10, hhDrain: 1.80, tripHead: 1.5, minStage: 0.5 };
+let GATE_WIDTH, MAX_LIFT, CREST, SETPOINT, START, DS_LIMIT, HH_LAKE, HH_DRAIN, TRIP_HEAD, MIN_STAGE, siteSource = 'illustrative';
+function applySite(p) { ({ width: GATE_WIDTH, maxLift: MAX_LIFT, crest: CREST, setpoint: SETPOINT, start: START, dsLimit: DS_LIMIT, hhLake: HH_LAKE, hhDrain: HH_DRAIN, tripHead: TRIP_HEAD, minStage: MIN_STAGE } = p); }
+applySite(DEFAULT_SITE);
+function validateSite(p) { // throws on values that cannot describe a real outlet
+  for (const k of Object.keys(DEFAULT_SITE)) if (!Number.isFinite(p[k])) throw new Error('Missing or non-numeric ' + k + '.');
+  if (p.width <= 0 || p.width > 20) throw new Error('Gate width must be between 0 and 20 m.');
+  if (p.maxLift <= 0 || p.maxLift > 5) throw new Error('Maximum lift must be between 0 and 5 m.');
+  if (p.tripHead <= 0) throw new Error('Torque-trip head must be positive.');
+  if (!(p.minStage >= 0 && p.minStage < p.setpoint)) throw new Error('Minimum valid stage must be at least 0 and below the setpoint.');
+  if (!(p.setpoint < p.start && p.start < p.crest)) throw new Error('Need setpoint < opening level < crest.');
+  if (p.hhLake > p.crest || p.hhLake <= p.start) throw new Error('Lake high-high alarm must be above the opening level and not above the crest.');
+  if (p.dsLimit > p.crest || p.hhDrain > p.crest) throw new Error('Downstream limits must not exceed the crest.');
+}
+function importSite(obj) { const p = { ...DEFAULT_SITE, ...obj }; validateSite(p); applySite(p); siteSource = 'imported'; }
+function importSiteText(text) { // "name,value" rows; unknown names are rejected so typos are not silently ignored
+  const obj = {};
+  for (const line of String(text).split(/\r?\n/)) {
+    const [k, v] = line.split(/[,;\t=]/).map(s => (s || '').trim());
+    if (!k || k.startsWith('#') || k === 'name') continue;
+    if (!(k in DEFAULT_SITE)) throw new Error('Unknown site parameter "' + k + '". Use: ' + Object.keys(DEFAULT_SITE).join(', ') + '.');
+    obj[k] = v === '' || v === undefined ? NaN : +v;
+  }
+  if (!Object.keys(obj).length) throw new Error('No site parameters found.');
+  importSite(obj); return Object.keys(obj).length;
+}
+function resetSite() { applySite(DEFAULT_SITE); siteSource = 'illustrative'; }
 
 // ---------- Stage-storage curves (stage m above sill datum, surface area m²) ----------
 const DEFAULT_CURVES = {
@@ -111,7 +139,7 @@ let Vu, Vd, u, d, t, pos, active, us, ds, timer, integ, lastTarget, drift, estVu
 const fault = () => $('fault').value;
 const piMode = () => ($('mode') && $('mode').value || '').startsWith('PI');
 function measured() { return { mu: u + (fault() === 'Lake sensor drift' ? drift : 0), md: d }; }
-function actuatorRate() { const load = Math.abs(u - d); return 2 * (1 - 0.4 * clamp((load - 1) / 0.5)); } // % per second, slows under high head
+function actuatorRate() { const load = Math.abs(u - d); return 2 * (1 - 0.4 * clamp((load - 2 * TRIP_HEAD / 3) / (TRIP_HEAD / 3))); } // % per second, slows under high head
 
 // Controller decision. Pure: reads state, changes nothing (tick() commits).
 function calc() {
@@ -127,21 +155,21 @@ function calc() {
   else need = Math.max(0, I + (volAt(curves.lake, mu) - volAt(curves.lake, SETPOINT)) / 300);
   if (isActive) {
     target = Math.min(100, 100 * Math.min(need, room) / full);
-    msg = room < need ? 'Release limited by downstream allowance' : piMode() ? 'PI controller tracking the 1.55 m lake setpoint' : 'Release calculated from inflow and lake storage';
+    msg = room < need ? 'Release limited by downstream allowance' : piMode() ? 'PI controller tracking the ' + SETPOINT.toFixed(2) + ' m lake setpoint' : 'Release calculated from inflow and lake storage';
   }
   if (md >= DS_LIMIT || mu - md <= .05) { target = 0; msg = 'Closure requested: high receiving stage or insufficient forward head'; }
   if (piMode()) { const base = lastTarget ?? pos; target = clamp(target, base - 4, base + 4); } // smooth commands, 4 %/s
-  if (Math.min(u, d) < .5 || F === 'Invalid stage sensor' || F === 'Local stop') { hold = true; msg = 'Automatic movement suspended. Local operator review required.'; }
+  if (Math.min(u, d) < MIN_STAGE || F === 'Invalid stage sensor' || F === 'Local stop') { hold = true; msg = 'Automatic movement suspended. Local operator review required.'; }
   if (sensorFault) { hold = true; msg = 'Lake sensor disagrees with the water balance by more than 8 cm. Automatic movement suspended; check the transmitter against the staff gauge.'; }
   if (F === 'Gate jam') { hold = true; msg = 'Actuator jam simulated: actual travel held. Dispatch operator.'; }
-  if (!hold && !tripped && Math.abs(u - d) > 1.5 && target > pos) tripNow = true;
+  if (!hold && !tripped && Math.abs(u - d) > TRIP_HEAD && target > pos) tripNow = true;
   if (tripped || tripNow) { hold = true; msg = 'Torque trip: differential head too high for the actuator to open. Reset after inspection.'; }
   if (jamAlarm && !hold) msg += ' · Partial jam detected: travel slower than commanded. Dispatch operator.';
   if (F === 'Loss of telemetry') msg += ' · link offline, local logic active';
-  if (u >= 2.1 && d >= 1.8) msg += ' · HIGH WATER ON BOTH SIDES';
+  if (u >= HH_LAKE && d >= HH_DRAIN) msg += ' · HIGH WATER ON BOTH SIDES';
   const lift = pos / 100 * MAX_LIFT;
-  const q = Math.min(u, d) < .5 ? 0 : gateFlow(u, d, lift);
-  const qEst = Math.min(mu, md) < .5 ? 0 : gateFlow(mu, md, lift);
+  const q = Math.min(u, d) < MIN_STAGE ? 0 : gateFlow(u, d, lift);
+  const qEst = Math.min(mu, md) < MIN_STAGE ? 0 : gateFlow(mu, md, lift);
   return { target, hold, msg, drain, I, L, q, qEst, isActive, err, tripNow, mu, md };
 }
 
@@ -181,7 +209,7 @@ function draw() {
   $('read').textContent = 'Target ' + (a.hold ? 'suspended' : a.target.toFixed(0) + '%') + '   ·   Actual ' + pos.toFixed(0) + '%   ·   Lift ' + (pos / 100 * MAX_LIFT).toFixed(3) + ' m';
   $('reason').textContent = a.msg;
   $('vol').textContent = 'Time ' + t + ' s   ·   Signed gate flow ' + a.q.toFixed(2) + ' m³/s   ·   Lake spill ' + us.toFixed(1) + ' m³   ·   Downstream spill ' + ds.toFixed(1) + ' m³';
-  const src = $('dataSource'); if (src) src.textContent = 'Lake curve: ' + dataSource.lake + ' · Drain curve: ' + dataSource.drain + ' · Rainfall: ' + (($('rain') && $('rain').value === 'Imported series') ? dataSource.rain : 'scenario') + ' · Cd ' + dischargeCoefficient().toFixed(2);
+  const src = $('dataSource'); if (src) src.textContent = 'Lake curve: ' + dataSource.lake + ' · Drain curve: ' + dataSource.drain + ' · Rainfall: ' + (($('rain') && $('rain').value === 'Imported series') ? dataSource.rain : 'scenario') + ' · Cd ' + dischargeCoefficient().toFixed(2) + ' · Gate and levels: ' + siteSource;
 }
 
 function stop() { clearInterval(timer); timer = null; $('run').textContent = 'Run'; }
