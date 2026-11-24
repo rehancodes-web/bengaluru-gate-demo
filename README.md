@@ -17,7 +17,11 @@ Select **Lake rising**, then **Advance 1 second**. The controller requests about
 
 Each case supports healthy equipment, an invalid stage sensor, a jammed gate, loss of telemetry and a local stop. Export a run to CSV before resetting to compare results.
 
-**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 986 checks, including all 196 scenario, equipment-condition and controller combinations and all 100 gate-type combinations with an exact water balance.
+**Offline:** Download the repository ZIP, extract it and open `index.html`. Keep `controller.js` alongside it. Run `node verify.cjs` to run 1018 checks, including all 196 scenario, equipment-condition and controller combinations and all 100 gate-type combinations with an exact water balance.
+
+## Control board (training simulator)
+
+`control.html` is a control-room style board for operating gates across Bengaluru, built on the Bengaluru Water Map data (MOD Foundation, May 2026: 205 lakes, 111 lost water bodies, main streams, valleys and the city boundary). It places an illustrative planning layout of 208 gates (vertical lift, radial, crest, flap with penstock and pump, float) by lake size and valley, shown as coloured, shaped markers with a legend. Select a lake or gate to see its faceplate and a live mimic of that gate moving. Operators can switch Auto, Manual or Local, open or close fully, set any percentage, stop, start or stop pumps and override process interlocks; every command needs an operator name, is confirmed before sending (with a reason for manual and override), is supervised for execution and is logged. Alarms follow priority and acknowledgement rules, and each fault has troubleshooting steps and field actions. The display follows ISA-101 high-performance HMI practice (neutral greys, colour for abnormal states). It is not connected to field equipment: a real system needs authenticated access on a closed network, PLC interlocks at each gate that the screen cannot bypass and witnessed commissioning.
 
 ## Gate types compared
 

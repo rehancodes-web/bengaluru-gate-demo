@@ -150,6 +150,34 @@ ok(['gear','ring','worm'].every(t => Object.values(GP.TYPES).some(T => T.parts.s
 for (const f of ['index.html','gate-types.html','gate-assembly.html','bench.html']) ok(fs.readFileSync(path.join(__dirname,f),'utf8').includes('site-nav.js'), f + ' has the site navigation');
 ok(/url=gate-assembly.html/.test(fs.readFileSync(path.join(__dirname,'mechanism.html'),'utf8')), 'old assembly page redirects to the new one');
 
+// Manual control, interlocks, override, local mode, faults and repairs (used by the control board)
+{ const step = (m, n) => { for (let i = 0; i < n; i++) GT.step(m); return m; };
+  const a = step(GT.create('vertical', 'Monsoon storm', 'Healthy'), 100); GT.command(a, 60); step(a, 40);
+  ok(Math.abs(a.pos - 60) < 0.01 && a.mode === 'manual', 'manual command moves the gate to the operator target');
+  ok(a.pos - 0 <= 40 * GT.TYPES.vertical.rate + 1e-9, 'manual travel respects the rate limit');
+  const b = step(GT.create('vertical', 'High river / backflow', 'Healthy'), 3500); const p0 = b.pos; GT.command(b, 100); step(b, 30);
+  ok(b.pos <= p0 + 1e-9 && /interlock/i.test(b.alarm), 'interlock blocks opening into a high downstream drain');
+  GT.command(b, 100, { override: true }); step(b, 30); ok(b.pos > p0 + 10, 'operator override lets the gate open');
+  GT.command(b, 0); step(b, 200); ok(b.pos === 0, 'closing is never blocked by the interlock');
+  const c = step(GT.create('vertical', 'Cloudburst', 'Healthy'), 50); GT.setMode(c, 'local'); const pl = c.pos; step(c, 600); ok(c.pos === pl, 'local mode ignores the remote controller');
+  const d = GT.create('vertical', 'Cloudburst', 'Healthy'); GT.setFault(d, 'Gate jam', 0); GT.command(d, 50); step(d, 60); ok(d.pos === 0, 'a jammed gate does not move on command');
+  GT.repair(d); step(d, 60); ok(d.pos > 20, 'repair restores movement');
+  const e = GT.create('vertical', 'Cloudburst', 'Healthy'); GT.setFault(e, 'Power cut', 0); GT.command(e, 50); step(e, 60); ok(e.pos === 0, 'no power, no movement on command');
+  const f = step(GT.create('crest', 'Lake already full', 'Healthy'), 10); GT.command(f, 100); step(f, 400); ok(Math.abs(f.z - GT.TYPES.crest.zmin) < 0.02 || /interlock/i.test(f.alarm), 'crest manual 100% lowers the crest (unless interlocked)');
+  const g = step(GT.create('flap', 'Monsoon storm', 'Healthy'), 10); GT.command(g, 0, { pump: true }); step(g, 100); ok(g.pen === 0, 'flap penstock closes on command');
+  ok(Math.abs(GT.opening(a) - 60) < 0.01, 'opening helper reports percent');
+  for (const id of Object.keys(GT.TYPES)) for (const c2 of ['Healthy', 'Power cut', 'Gate jam']) { const m2 = GT.create(id, 'Cloudburst', c2); GT.command(m2, 70); step(m2, 7200); ok(GT.balanceError(m2) < 1e-4, id + ' / manual 70% / ' + c2 + ': water balance'); }
+}
+// Control board: data and page
+{ const W = require('./bengaluru-water-data.js');
+  ok(W.lakes.length === 205 && W.lost.length === 111 && W.boundary.length > 1000 && W.streams.length > 1000, 'water map data: 205 lakes, 111 lost, boundary and streams');
+  ok(W.lakes.every(l => l.n && l.a > 0 && l.b && l.b.length === 4 && l.d), 'every lake has name, area, bounds and outline');
+  const h = fs.readFileSync(path.join(__dirname, 'control.html'), 'utf8');
+  ok(['gate-types.js', 'bengaluru-water-data.js', 'control.js', 'site-nav.js'].every(s => h.includes('src="' + s + '"')), 'control board loads its scripts');
+  ok(/NOT CONNECTED TO FIELD EQUIPMENT/.test(h), 'control board states it is a simulator');
+  new vm.Script(fs.readFileSync(path.join(__dirname, 'control.js'), 'utf8')); ok(true, 'control.js parses');
+}
+
 // Mechanism and flow-at-gate calculations
 ok(Math.abs(GT.plateThrust(1.0, 0, 0, 2) - 1000*9.81*2*0.5) < 1e-6, 'hydrostatic thrust: 1 m of water on a 2 m plate is 9.81 kN');
 ok(GT.plateThrust(1.0, 1.0, 0, 2) === 0, 'no net thrust with equal levels');

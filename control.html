@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gate control board</title>
+<style>
+  /* Control-room style after ISA-101 / high-performance HMI practice: neutral greys, colour kept for
+     gate type markers and for abnormal states; alarms use shape and text as well as colour. */
+  :root{--bg:#c9ccce;--panel:#dfe1e2;--panel2:#eceeef;--line:#a9aeb2;--ink:#1d2226;--mute:#555d63;--dark:#2b3136;
+    --water:#8fb0c4;--water2:#6f97ae;--stream:#6f97ae;--land:#e4e5e2;--edge:#4d565c;
+    --p1:#d0021b;--p2:#e8730c;--p3:#d9b100;--ok:#2e7d32;--manual:#1b5fb4;
+    --t-vertical:#2f5f9e;--t-radial:#6a3f93;--t-crest:#127a6a;--t-flap:#8a5a2b;--t-float:#4a4f54}
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.35 "Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column}
+  button,select,input{font:inherit;color:inherit}
+  button{background:#f3f4f5;border:1px solid #8d9398;border-radius:3px;padding:5px 10px;cursor:pointer}
+  button:hover{background:#fff}button:disabled{opacity:.45;cursor:not-allowed}
+  button.pri{background:var(--dark);color:#fff;border-color:var(--dark)}
+  button.warn{border-color:var(--p2)}
+  :focus-visible{outline:2px solid var(--manual);outline-offset:1px}
+  .bar{display:flex;align-items:center;gap:14px;padding:6px 12px;background:var(--dark);color:#e8eaeb;flex-wrap:wrap}
+  .bar b{font-weight:600}.bar .grow{flex:1}
+  .bar select,.bar button{background:#3c444a;border-color:#59626a;color:#fff;padding:3px 8px}
+  .demo{background:#f4d35e;color:#1d2226;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.02em}
+  .clock{font-variant-numeric:tabular-nums}
+  #almBar{display:flex;align-items:center;gap:8px;padding:5px 12px;background:#b7bbbe;border-bottom:1px solid var(--line);min-height:34px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:3px;background:var(--panel2);border:1px solid var(--line);font-weight:600;font-variant-numeric:tabular-nums}
+  .shape{display:inline-block;width:10px;height:10px}
+  .s1{background:var(--p1)}.s2{background:var(--p2);clip-path:polygon(50% 0,100% 100%,0 100%)}.s3{background:var(--p3);transform:rotate(45deg) scale(.8)}
+  #almLatest{flex:1;min-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 430px;grid-template-rows:minmax(0,1fr) 210px;min-height:0}
+  main>*{min-width:0}
+  #mapWrap{position:relative;background:#d6d9da;border-right:1px solid var(--line);min-height:0;overflow:hidden}
+  #map{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
+  #map.drag{cursor:grabbing}
+  .land{fill:var(--land)}.edge{fill:none;stroke:var(--edge);stroke-width:1.6;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+  .stream{fill:none;stroke:var(--stream);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.9}
+  .lake{fill:var(--water);stroke:var(--water2);stroke-width:.8;vector-effect:non-scaling-stroke;cursor:pointer}
+  .lake.sel{fill:#5f87a0;stroke:#1d2226;stroke-width:1.6}
+  .lost{fill:none;stroke:#8d6a55;stroke-width:1;stroke-dasharray:3 2;vector-effect:non-scaling-stroke}
+  .lbl{font-size:11px;fill:#2b3136;paint-order:stroke;stroke:#e4e5e2;stroke-width:3px;text-anchor:middle;pointer-events:none;font-weight:600}
+  .gate{cursor:pointer}
+  .gate .ring{fill:none;stroke:none;stroke-width:2.5}
+  .gate .sel{fill:none;stroke:none}
+  .gate.alm1 .ring{stroke:var(--p1)}.gate.alm2 .ring{stroke:var(--p2)}.gate.alm3 .ring{stroke:var(--p3)}
+  .gate.unack .ring{animation:blink 1s steps(2) infinite}
+  .gate.selg .sel{stroke:#000;stroke-width:2;fill:none}
+  @keyframes blink{50%{stroke-opacity:.15}}
+  @media (prefers-reduced-motion:reduce){.gate.unack .ring{animation:none;stroke-dasharray:3 2}}
+  .ovl{position:absolute;background:rgba(236,238,239,.96);border:1px solid var(--line);border-radius:4px;padding:8px 10px}
+  #legend{margin-top:4px}
+  #legend h4,#filters h4{margin:0 0 6px;font-size:12px}
+  #legend div{display:flex;align-items:center;gap:8px;margin:3px 0}
+  #legend svg{flex:none}
+  #legend small{color:var(--mute)}
+  #filters{left:10px;top:10px;width:250px}
+  #filters input[type=search]{width:100%;padding:4px 6px;border:1px solid #8d9398;border-radius:3px;margin-bottom:6px}
+  #filters select{width:100%;margin-bottom:6px}
+  #filters label{display:flex;gap:6px;align-items:center;margin:2px 0}
+  #res button{display:block;width:100%;text-align:left;margin:2px 0;padding:3px 6px}
+  #zoom{right:10px;top:10px;display:flex;flex-direction:column;gap:4px;padding:4px}
+  #zoom button{width:30px;height:30px;padding:0}
+  #side{background:var(--panel);overflow:auto;min-height:0;grid-row:1 / span 2;grid-column:2}
+  .sec{border-bottom:1px solid var(--line);padding:10px 12px}
+  .sec h3{margin:0 0 8px;font-size:13px;text-transform:none}
+  .kv{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:3px 10px;font-variant-numeric:tabular-nums}
+  .kv dt{color:var(--mute)}.kv dd{margin:0;font-weight:600}
+  .bigs{display:flex;gap:8px;margin:6px 0}
+  .bigs div{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:5px 7px}
+  .bigs span{display:block;color:var(--mute);font-size:11px}.bigs b{font-size:18px;font-variant-numeric:tabular-nums}
+  .mode{display:flex;gap:0}.mode button{border-radius:0;flex:1}.mode button[aria-pressed=true]{background:var(--manual);color:#fff;border-color:var(--manual)}
+  .cmdgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+  .setp{display:flex;gap:6px;align-items:center;margin-top:8px}
+  .setp input[type=range]{flex:1}.setp input[type=number]{width:62px;padding:3px}
+  #mimic{width:100%;height:auto;background:#eef0f1;border:1px solid var(--line);border-radius:3px;display:block}
+  #mimic text{font:11px "Segoe UI",system-ui;fill:#1d2226}
+  .status{padding:6px 8px;border-left:4px solid var(--ok);background:var(--panel2);margin-top:6px}
+  .status.a1{border-color:var(--p1)}.status.a2{border-color:var(--p2)}.status.a3{border-color:var(--p3)}.status.man{border-color:var(--manual)}
+  .lakeGates button{display:flex;width:100%;justify-content:space-between;margin:3px 0;text-align:left}
+  .ts li{margin:3px 0}.ts{padding-left:18px;margin:6px 0}
+  .tsact{display:flex;flex-wrap:wrap;gap:6px}
+  #bottom{grid-column:1;grid-row:2;background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .tabs{display:flex;gap:2px;padding:4px 8px 0;background:#cfd2d4;border-bottom:1px solid var(--line)}
+  .tabs button{border-radius:3px 3px 0 0;border-bottom:none}.tabs button[aria-selected=true]{background:var(--panel);font-weight:600}
+  .tabs .sp{flex:1}
+  .tbl{overflow:auto;flex:1}
+  table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+  th,td{padding:4px 8px;border-bottom:1px solid #c4c8cb;text-align:left;white-space:nowrap}
+  th{background:#d3d6d8;position:sticky;top:0}
+  tr.p1 td:first-child{border-left:4px solid var(--p1)}tr.p2 td:first-child{border-left:4px solid var(--p2)}tr.p3 td:first-child{border-left:4px solid var(--p3)}
+  tr.unack td{font-weight:600}tr.cleared td{color:var(--mute)}
+  tr:hover td{background:#e8eaeb;cursor:pointer}
+  dialog{border:1px solid #5c646a;border-radius:4px;padding:0;max-width:480px;width:94%}
+  dialog::backdrop{background:rgba(20,24,27,.45)}
+  dialog header{background:var(--dark);color:#fff;padding:8px 12px;font-weight:600}
+  dialog .body{padding:12px}
+  dialog .body p{margin:0 0 8px}
+  dialog label{display:block;margin:8px 0 3px;color:var(--mute)}
+  dialog input[type=text],dialog select{width:100%;padding:5px;border:1px solid #8d9398;border-radius:3px}
+  dialog footer{display:flex;justify-content:flex-end;gap:8px;padding:8px 12px;background:var(--panel)}
+  .wn{background:#fff3e0;border-left:4px solid var(--p2);padding:6px 8px;margin:8px 0}
+  .note{color:var(--mute);font-size:12px}
+  @media(max-width:1000px){main{grid-template-columns:1fr;grid-template-rows:60vh auto auto}#side{grid-row:auto;grid-column:1}#bottom{grid-row:auto}#legend,#filters{width:200px}}
+</style>
+</head>
+<body>
+<script src="site-nav.js"></script>
+<div class="bar">
+  <span class="demo" title="Simulated gates for training and demonstration. Not connected to field equipment.">TRAINING SIMULATOR · NOT CONNECTED TO FIELD EQUIPMENT</span>
+  <b>Bengaluru lake gate control board</b>
+  <span class="grow"></span>
+  <label>Flood case <select id="scenario"></select></label>
+  <label>Speed <select id="speed"><option value="1">1×</option><option value="10" selected>10×</option><option value="60">60×</option></select></label>
+  <button id="pause">Pause</button>
+  <span class="clock">Sim <span id="simClock">00:00:00</span></span>
+  <span class="clock">IST <span id="wallClock"></span></span>
+  <label>Operator <input id="operator" type="text" placeholder="name" style="width:110px;background:#3c444a;border:1px solid #59626a;color:#fff;padding:3px 6px;border-radius:3px"></label>
+</div>
+<div id="almBar" role="status" aria-live="polite">
+  <span class="chip"><i class="shape s1"></i>P1 <span id="c1">0</span></span>
+  <span class="chip"><i class="shape s2"></i>P2 <span id="c2">0</span></span>
+  <span class="chip"><i class="shape s3"></i>P3 <span id="c3">0</span></span>
+  <span class="chip">Unacknowledged <span id="cU">0</span></span>
+  <span class="chip">Gates <span id="cG">0</span> · manual <span id="cM">0</span></span>
+  <span id="almLatest"></span>
+  <button id="ackAll">Acknowledge all</button>
+</div>
+<main>
+  <div id="mapWrap">
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Map of Bengaluru lakes and gates"><g id="vp"><path class="land" id="land"/><path class="stream" id="streams"/><g id="lostG" style="display:none"></g><g id="lakeG"></g><path class="edge" id="edge"/><g id="lblG"></g><g id="gateG"></g></g></svg>
+    <div id="filters" class="ovl">
+      <h4>Find and filter</h4>
+      <input type="search" id="q" placeholder="Lake or gate ID (e.g. Bellandur)" autocomplete="off"><div id="res"></div>
+      <select id="fValley"><option value="">All valleys</option></select>
+      <select id="fType"><option value="">All gate types</option></select>
+      <label><input type="checkbox" id="fAlarm"> Gates in alarm only</label>
+      <label><input type="checkbox" id="fManual"> Gates in manual only</label>
+      <label><input type="checkbox" id="tLbl" checked> Lake names</label>
+      <label><input type="checkbox" id="tLost"> Lost water bodies</label>
+    </div>
+    <details id="legendBox" class="ovl" open style="left:10px;bottom:10px;width:250px;padding:6px 10px"><summary style="cursor:pointer;font-weight:600">Legend</summary><div id="legend" aria-label="Legend"></div></details>
+    <div id="zoom" class="ovl"><button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">−</button><button id="zr" aria-label="Reset view">⌂</button></div>
+  </div>
+
+  <aside id="side">
+    <div class="sec" id="noSel"><h3>No gate selected</h3><p class="note">Select a gate marker on the map, or a lake to list its gates. Commands need an operator name and are confirmed before they are sent.</p><div id="valleySum"></div></div>
+    <div id="faceplate" hidden>
+      <div class="sec">
+        <h3 id="fpTitle"></h3>
+        <dl class="kv" id="fpInfo"></dl>
+        <div class="bigs"><div><span>Actual opening</span><b id="fpAct"></b></div><div><span>Target</span><b id="fpTgt"></b></div><div><span>Gate flow</span><b id="fpQ"></b></div></div>
+        <svg id="mimic" viewBox="0 0 400 210" role="img" aria-label="Live gate mimic"></svg>
+        <div class="status" id="fpStatus"></div>
+      </div>
+      <div class="sec">
+        <h3>Control</h3>
+        <div class="mode" role="group" aria-label="Control mode"><button id="mAuto" aria-pressed="false">Auto</button><button id="mManual" aria-pressed="false">Manual (remote)</button><button id="mLocal" aria-pressed="false">Local (site)</button></div>
+        <div class="cmdgrid"><button id="cOpen">Open fully</button><button id="cClose">Close fully</button><button id="cStop" class="warn">Stop / hold</button></div>
+        <div class="setp"><label for="pct">Set opening</label><input type="range" id="pctR" min="0" max="100" step="1"><input type="number" id="pct" min="0" max="100" step="1"><span>%</span><button id="cSet" class="pri">Send</button></div>
+        <div class="setp" id="pumpRow" hidden><span>Pump</span><button id="pAuto">Auto</button><button id="pOn">Start</button><button id="pOff">Stop</button></div>
+        <label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="override"> Override process interlocks (needs a reason; logged)</label>
+        <p class="note" id="cmdNote"></p>
+      </div>
+      <div class="sec">
+        <h3>Troubleshoot</h3>
+        <div id="tsBody"></div>
+        <div class="tsact" style="margin-top:8px"><button id="selfTest">Run self-test</button><label>Training: inject fault <select id="inject"><option value="">—</option></select></label></div>
+        <pre id="tsOut" class="note" style="white-space:pre-wrap;margin:8px 0 0"></pre>
+      </div>
+    </div>
+  </aside>
+
+  <section id="bottom">
+    <div class="tabs" role="tablist"><button role="tab" id="tA" aria-selected="true">Alarms</button><button role="tab" id="tE" aria-selected="false">Operator log</button><button role="tab" id="tI" aria-selected="false">Gate list</button><span class="sp"></span><button id="exportLog">Export log (CSV)</button></div>
+    <div class="tbl" id="tbl"></div>
+  </section>
+</main>
+
+<dialog id="dlg"><form method="dialog"><header id="dlgTitle"></header><div class="body" id="dlgBody"></div><footer><button value="cancel">Cancel</button><button value="ok" class="pri" id="dlgOk">Execute</button></footer></form></dialog>
+
+<script src="gate-types.js"></script>
+<script src="bengaluru-water-data.js"></script>
+<script src="control.js"></script>
+</body>
+</html>

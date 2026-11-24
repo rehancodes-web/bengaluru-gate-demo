@@ -2,6 +2,7 @@
 // at the top of <body>; it marks the current page and works offline.
 (function () {
   const pages = [
+    ['control.html', 'Control board'],
     ['index.html', 'Lake outlet simulator'],
     ['gate-types.html', 'Gate types and floods'],
     ['gate-assembly.html', 'Assemblies and materials'],

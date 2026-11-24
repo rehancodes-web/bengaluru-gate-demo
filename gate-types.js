@@ -48,6 +48,7 @@
     'Hydraulic leak': 'Crest gate only: from 10 minutes a cylinder seal leaks; the leaf sinks faster than the power pack can raise it.'
   };
   const FAULT_AT = 600;
+  const fa = m => (m.faultAt === undefined ? FAULT_AT : m.faultAt);
 
   // ---------- Gate types ----------
   // up/dn: plan area (m²), top level before spilling (m). recv: conveyance from the downstream side to the receiving water.
@@ -105,21 +106,21 @@
     return m;
   }
   function levels(m) { const T = m.T; return { h1: m.V1 / T.up.area, h2: T.dn.area === Infinity ? m.S.river(m.t) : m.V2 / T.dn.area }; }
-  const faultOn = (m, c) => m.condition === c && m.t >= FAULT_AT;
-  const hasPower = m => !faultOn(m, 'Power cut') && !(m.condition === 'Power cut, backup starts' && m.t >= FAULT_AT && m.t < FAULT_AT + 90);
+  const faultOn = (m, c) => m.condition === c && m.t >= fa(m);
+  const hasPower = m => !faultOn(m, 'Power cut') && !(m.condition === 'Power cut, backup starts' && m.t >= fa(m) && m.t < fa(m) + 90);
 
   // The controller's view of the upstream level: frozen after a sensor failure. A frozen signal is detected
   // after 60 s of no change while flow is moving, and automatic control then holds.
   function measuredUp(m, h1) {
     if (faultOn(m, 'Sensor failure, backup sensor')) { // voting: primary frozen, backup live; mismatch > 3 cm or 10 s stale switches over
       if (m.frozen === null) m.frozen = h1;
-      const switched = Math.abs(m.frozen - h1) > 0.03 || m.t >= FAULT_AT + 10;
+      const switched = Math.abs(m.frozen - h1) > 0.03 || m.t >= fa(m) + 10;
       m.meas = switched ? h1 : m.frozen; m.sensorOk = true; m.voted = switched;
       return { v: m.meas, ok: true };
     }
     if (!faultOn(m, 'Level sensor failure')) { m.meas = h1; m.sensorOk = true; return { v: h1, ok: true }; }
     if (m.frozen === null) m.frozen = h1;
-    m.meas = m.frozen; m.sensorOk = m.t < FAULT_AT + 60;
+    m.meas = m.frozen; m.sensorOk = m.t < fa(m) + 60;
     return { v: m.frozen, ok: m.sensorOk };
   }
 
@@ -143,7 +144,9 @@
     const T = m.T, power = !T.powered || hasPower(m), jam = faultOn(m, 'Gate jam');
     const sens = T.sensed ? measuredUp(m, h1) : { v: h1, ok: true };
     let msg = '';
+    const manual = m.mode === 'manual' && m.manual, local = m.mode === 'local';
     if (m.typeId === 'float') {
+      if (manual || local) m.cmdNote = 'Float gate has no motor: remote commands are not possible. Use the maintenance lock pin on site.';
       const target = 100 * clamp((h1 - T.setpoint) / T.band); m.target = target;
       if (!jam) m.pos += clamp(target - m.pos, -T.rate, T.rate);
       msg = jam ? 'Float gate jammed: no automatic response. Send a crew.' : h1 > T.setpoint ? 'Float lifting the gate as the lake rises.' : 'Lake below 1.5 m: float holds the gate shut.';
@@ -152,14 +155,20 @@
     if (!power) msg = 'Power cut: motorised gate holding position. ';
     if (!sens.ok) msg += 'Upstream sensor frozen: automatic control holding. ';
     if (jam) msg += 'Gate jammed: travel stopped. ';
-    const canMove = power && sens.ok && !jam;
+    // a manual command still needs power and a working drive; it does not need the level sensor
+    const canMove = power && !jam && (manual || local ? true : sens.ok);
+    if (local) msg = 'Local control at the site panel: remote commands are ignored. ';
+    const ilock = (opening, why) => { if (manual && !m.manual.override && opening) { m.interlock = why; return true; } return false; };
+    m.interlock = '';
 
     if (m.typeId === 'flap') {
       const reverse = h2 > sens.v;
       m.target = reverse ? 0 : 100;
+      if (manual) { m.target = clamp(m.manual.target, 0, 100); if (m.target > m.pen && ilock(reverse, 'River higher than the drain: opening the penstock would let backflow in.')) m.target = m.pen; }
+      if (local) m.target = m.pen;
       if (canMove) m.pen += clamp(m.target - m.pen, -T.rate, T.rate);
       const outfallShut = h2 >= h1 - T.flapHead || m.pen < 5;
-      if (power) { if (outfallShut && h1 > T.pumpOn) m.pump = true; if (h1 < T.pumpOff || !outfallShut) m.pump = false; } else m.pump = false;
+      if (power) { if (manual && m.manual.pump !== undefined && m.manual.pump !== null) m.pump = !!m.manual.pump && h1 > 0.05; else { if (outfallShut && h1 > T.pumpOn) m.pump = true; if (h1 < T.pumpOff || !outfallShut) m.pump = false; } } else m.pump = false;
       if (!msg) msg = reverse ? 'River higher than the drain: flap shut, penstock closing' + (m.pump ? ', pump running.' : '.') : 'Drain flowing out through the flap.';
       else if (!power && h2 > h1) msg += 'Pump stopped: trapped water is rising.';
       return msg.trim();
@@ -168,7 +177,10 @@
       let zt = T.setpoint;
       if (sens.v > T.setpoint) zt = T.setpoint - 4 * (sens.v - T.setpoint);
       if (h2 >= T.dsLimit || h2 > sens.v - 0.02) zt = T.zmax; // also block reverse flow into the lake
-      zt = clamp(zt, T.zmin, T.zmax); m.target = zt;
+      zt = clamp(zt, T.zmin, T.zmax);
+      if (manual) { zt = T.zmax - clamp(m.manual.target, 0, 100) / 100 * (T.zmax - T.zmin); if (zt < m.z && ilock(h2 >= T.dsLimit || h2 > sens.v - 0.02, 'Drain high or level with the lake: lowering the crest would flood downstream or let water back in.')) zt = m.z; }
+      if (local) zt = m.z;
+      m.target = zt;
       const hleak = faultOn(m, 'Hydraulic leak');
       if (canMove) m.z += clamp(zt - m.z, -T.zrate, hleak ? 0.002 : T.zrate);
       if (hleak) msg += 'Cylinder seal leaking: leaf sinking faster than the power pack can raise it. ';
@@ -184,24 +196,31 @@
     } else target = 100 * clamp((sens.v - T.setpoint) / T.band);
     const closeReq = h2 >= T.dsLimit || sens.v - h2 <= 0.05;
     if (closeReq) target = 0;
+    if (manual) { target = clamp(m.manual.target, 0, 100); if (target > m.pos && ilock(closeReq, h2 >= T.dsLimit ? 'Downstream drain at its limit: opening would flood downstream.' : 'Drain level with or above the lake: opening would let water flow back.')) target = m.pos; }
+    if (local) target = m.pos;
     m.target = target;
     if (canMove) m.pos += clamp(target - m.pos, -T.rate, T.rate);
     if (!msg) msg = closeReq ? (h2 >= T.dsLimit ? 'Downstream at its limit: gate closing.' : 'Head reversing: gate closing to stop backflow.') : target > 0 ? 'Opening to release the rise above 1.5 m.' : 'Lake below setpoint: gate closed.';
     return msg.trim();
   }
 
+  function modeNote(m) {
+    if (m.mode === 'manual' && m.manual) return m.interlock ? 'MANUAL: ' + m.interlock + ' Opening blocked (interlock override needed).' : 'MANUAL: holding operator target ' + Math.round(m.manual.target) + '%' + (m.manual.override ? ' (interlocks overridden by operator)' : '') + '.';
+    return '';
+  }
   function step(m) {
     const T = m.T, S = m.S;
     let { h1, h2 } = levels(m);
     m.prevPos = m.typeId === 'crest' ? m.z : m.pos; m.prevPen = m.pen;
-    m.alarm = control(m, h1, h2);
+    m.alarm = control(m, h1, h2); m.cmdNote = m.cmdNote || '';
+    const mn = modeNote(m); if (mn && m.typeId !== 'float') m.alarm = mn + ' ' + m.alarm.replace(/^(?:Opening to release|Lake below setpoint|Downstream at its limit|Head reversing|Lowering the crest|Crest holding|Drain flowing out).*?\.(?=\s|$)/, '').trim();
     // mechanical faults acting after the controller's move
     if (faultOn(m, 'Brake creep') && (m.typeId === 'vertical' || m.typeId === 'radial') && m.pos > 0) {
       const d = Math.min(m.pos, 0.08); m.pos -= d; m.creep = (m.creep || 0) + d;
       if (m.creep > 2) m.alarm += ' Brake creep: leaf drifts down without a command; the PLC keeps re-driving it. Inspect the brake.';
     }
     if (faultOn(m, 'Hydraulic leak') && m.typeId === 'crest') m.z = Math.max(T.zmin, m.z - 0.004);
-    if (m.voted && m.t === FAULT_AT + 11) m.voteAt = m.t;
+    if (m.voted && m.t === fa(m) + 11) m.voteAt = m.t;
     if (m.voted) m.alarm += ' Main level sensor frozen; voting switched to the backup sensor. Control continues.';
     if (faultOn(m, 'Seal leakage') && Math.abs(m.leak || 0) > 0.005 && (m.open || 0) < 0.01) m.alarm += ' Flow past the closed gate: ' + (Math.abs(m.leak) * 1000).toFixed(0) + ' L/s. Seals need replacing.';
     m.alarm = m.alarm.trim();
@@ -265,7 +284,7 @@
   function mechanics(m) {
     const T = m.T, L = m.last, id = m.typeId, M = MECH[id], g = G, out = { flow: flowAtGate(m), parts: [] };
     const P = (name, value, note, state) => out.parts.push({ name, value, note, state: state || 'ok' });
-    const fault = c => m.condition === c && m.t >= FAULT_AT, power = !T.powered || !fault('Power cut'), jam = fault('Gate jam');
+    const fault = c => m.condition === c && m.t >= fa(m), power = !T.powered || !fault('Power cut'), jam = fault('Gate jam');
     const mv = L.moving > 0 ? 'Raising' : L.moving < 0 ? 'Lowering' : 'Stopped';
     if (id === 'vertical' || id === 'float') {
       const F = plateThrust(L.h1, L.h2, L.open, T.b), W = M.mass * g, fr = M.mu * Math.abs(F) + M.seal;
@@ -331,6 +350,14 @@
     return out;
   }
 
-  const api = { TYPES, SCENARIOS, CONDITIONS, FAULT_AT, MECH, create, step, levels, balanceError, orifice, weir, mechanics, flowAtGate, plateThrust };
+  // ---------- operator actions used by the control board ----------
+  function setMode(m, mode) { m.mode = mode; if (mode === 'manual' && !m.manual) m.manual = { target: m.typeId === 'crest' ? (m.T.zmax - m.z) / (m.T.zmax - m.T.zmin) * 100 : m.typeId === 'flap' ? m.pen : m.pos, override: false }; }
+  function command(m, target, opts) { setMode(m, 'manual'); m.manual = Object.assign({}, m.manual, { target: clamp(target, 0, 100) }, opts || {}); }
+  function stopGate(m) { if (m.mode !== 'manual') setMode(m, 'manual'); m.manual.target = m.typeId === 'crest' ? (m.T.zmax - m.z) / (m.T.zmax - m.T.zmin) * 100 : m.typeId === 'flap' ? m.pen : m.pos; }
+  function setFault(m, condition, at) { if (!(condition in CONDITIONS)) throw new Error('Unknown condition ' + condition); m.condition = condition; m.faultAt = at === undefined ? m.t : at; m.frozen = null; m.voted = false; m.creep = 0; }
+  function repair(m) { m.condition = 'Healthy'; m.frozen = null; m.voted = false; m.creep = 0; m.sensorOk = true; }
+  const opening = m => m.typeId === 'crest' ? (m.T.zmax - m.z) / (m.T.zmax - m.T.zmin) * 100 : m.typeId === 'flap' ? m.pen : m.pos;
+
+  const api = { TYPES, SCENARIOS, CONDITIONS, FAULT_AT, MECH, create, step, levels, balanceError, orifice, weir, mechanics, flowAtGate, plateThrust, setMode, command, stopGate, setFault, repair, opening };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GateTypes = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
