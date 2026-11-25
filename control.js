@@ -7,11 +7,11 @@
   const D = window.BLR_WATER, GT = window.GateTypes, $ = id => document.getElementById(id), NS = 'http://www.w3.org/2000/svg';
   const VALLEY = { 'Koramangala Challaghatta': 'KC', 'Hebbal Nagawara': 'HN', Vrishabhavati: 'VR', Arkavathi: 'AR', Suvarnamukhi: 'SM' };
   const TYPE = {
-    vertical: { code: 'VL', label: 'Vertical lift gate', where: 'Outlet of lakes 10–200 acres', color: 'var(--t-vertical)', hex: '#2f5f9e' },
-    radial: { code: 'RG', label: 'Radial gate', where: 'Outlet of lakes over 200 acres', color: 'var(--t-radial)', hex: '#6a3f93' },
-    crest: { code: 'CG', label: 'Crest gate (waste weir)', where: 'Weir of lakes over 100 acres', color: 'var(--t-crest)', hex: '#127a6a' },
-    flap: { code: 'FG', label: 'Flap gate + penstock + pump', where: 'Storm-drain outfall at a lost tank', color: 'var(--t-flap)', hex: '#8a5a2b' },
-    float: { code: 'FT', label: 'Float gate (no power)', where: 'Outlet of tanks under 10 acres', color: 'var(--t-float)', hex: '#4a4f54' }
+    vertical: { code: 'VL', label: 'Vertical lift gate', where: 'Outlet of lakes 10–200 acres', color: 'var(--t-vertical)', hex: '#5b9cff' },
+    radial: { code: 'RG', label: 'Radial gate', where: 'Outlet of lakes over 200 acres', color: 'var(--t-radial)', hex: '#c084fc' },
+    crest: { code: 'CG', label: 'Crest gate (waste weir)', where: 'Weir of lakes over 100 acres', color: 'var(--t-crest)', hex: '#2dd4bf' },
+    flap: { code: 'FG', label: 'Flap gate + penstock + pump', where: 'Storm-drain outfall at a lost tank', color: 'var(--t-flap)', hex: '#f0a35e' },
+    float: { code: 'FT', label: 'Float gate (no power)', where: 'Outlet of tanks under 10 acres', color: 'var(--t-float)', hex: '#a7b0b8' }
   };
   const SHAPE = { vertical: 'M-5-5h10v10h-10z', radial: 'M0-7L7 0L0 7L-7 0z', crest: 'M0-7L7 6H-7z', flap: 'M5 0A5 5 0 1 1-5 0A5 5 0 1 1 5 0z', float: 'M-3-6H3L6 0L3 6H-3L-6 0z' };
   const fmtT = s => { s = Math.floor(s); return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(v => String(v).padStart(2, '0')).join(':'); };
@@ -115,20 +115,33 @@
     const tt = document.createElementNS(NS, 'title'); tt.textContent = `${l.n} · ${l.a.toFixed(0)} acres · ${l.v}`; l.el.appendChild(tt);
   });
   D.lost.forEach(l => mk('lost', l, $('lostG')));
+  { // 1 km reference grid (one map unit is about 11.13 m)
+    const KM = 1000 / 11.132; let d = ''; for (let x = 0; x <= D.W; x += KM) d += 'M' + x.toFixed(1) + ' 0V' + D.H; for (let y = 0; y <= D.H; y += KM) d += 'M0 ' + y.toFixed(1) + 'H' + D.W;
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('d', d); p.setAttribute('class', 'grid'); $('gridG').appendChild(p);
+  }
+  // valley names at the area-weighted centre of each valley's lakes
+  const vlbls = Object.keys(VALLEY).map(v => { const ls = D.lakes.filter(l => l.v === v), A = ls.reduce((s, l) => s + l.a, 0); const cx = ls.reduce((s, l) => s + (l.b[0] + l.b[2] / 2) * l.a, 0) / A, cy = ls.reduce((s, l) => s + (l.b[1] + l.b[3] / 2) * l.a, 0) / A; const t = document.createElementNS(NS, 'text'); t.setAttribute('class', 'vlbl'); t.setAttribute('x', cx); t.setAttribute('y', cy + 160); t.textContent = v + ' valley'; $('vlblG').appendChild(t); return t; });
   gates.forEach(g => {
     const el = document.createElementNS(NS, 'g'); el.setAttribute('class', 'gate'); el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button'); el.setAttribute('aria-label', `${g.id} ${TYPE[g.type].label} at ${g.place.n}`);
-    el.innerHTML = `<circle class="sel" r="12"/><circle class="ring" r="9.5"/><path d="${SHAPE[g.type]}" fill="${TYPE[g.type].hex}" stroke="#fff" stroke-width="1.2"/><text class="badge" x="7" y="-6" font-size="9" font-weight="700" fill="#1b5fb4"></text><title>${g.id} · ${TYPE[g.type].label} · ${esc(g.place.n)}</title>`;
+    el.innerHTML = `<circle class="sel" r="12"/><circle class="ring" r="9.5"/><path d="${SHAPE[g.type]}" fill="${TYPE[g.type].hex}" stroke="#0b0e10" stroke-width="1.4"/><text class="badge" x="7" y="-6" font-size="10" font-weight="700" fill="#4aa3ff" stroke="#0b0e10" stroke-width="2.5" paint-order="stroke"></text><title>${g.id} · ${TYPE[g.type].label} · ${esc(g.place.n)}</title>`;
     el.addEventListener('click', e => { e.stopPropagation(); select(g); });
     el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(g); } });
     gateG.appendChild(el); g.el = el; g.badge = el.querySelector('.badge');
   });
+  const hov = $('hover');
+  function showHover(e, html) { const r = $('mapWrap').getBoundingClientRect(); hov.innerHTML = html; hov.style.display = 'block'; const x = e.clientX - r.left + 14, y = e.clientY - r.top + 14; hov.style.left = Math.min(x, r.width - 270) + 'px'; hov.style.top = Math.min(y, r.height - 90) + 'px'; }
+  D.lakes.forEach(l => { l.el.addEventListener('mousemove', e => showHover(e, '<b>' + esc(l.n) + '</b>' + l.a.toFixed(0) + ' acres · ' + esc(l.v) + '<br>' + ((l.gates || []).length ? l.gates.map(g => g.id).join(', ') : 'no gate planned'))); l.el.addEventListener('mouseleave', () => hov.style.display = 'none'); l.el.querySelector('title') && l.el.querySelector('title').remove(); });
+  gates.forEach(g => { g.el.addEventListener('mousemove', e => { const st = gateAlarmState(g), o = openingText(g.m); showHover(e, '<b>' + g.id + '</b>' + TYPE[g.type].label + '<br>' + esc(g.place.n) + '<br>Opening ' + o.act + ' · ' + (g.m.mode || 'auto').toUpperCase() + (st.p ? '<br><span style="color:var(--p' + st.p + ')">ALARM ' + PR[st.p] + '</span>' : '')); }); g.el.addEventListener('mouseleave', () => hov.style.display = 'none'); g.el.querySelector('title') && g.el.querySelector('title').remove(); });
   let k = 1, tx = 0, ty = 0, vw = 0, vh = 0, base = 1;
-  function fit() { vw = svg.clientWidth; vh = svg.clientHeight; const m = vw < 700 ? [10, 10, 10, 10] : [270, 20, 20, 20]; const aw = vw - m[0] - m[2], ah = vh - m[1] - m[3]; base = Math.min(aw / D.W, ah / D.H); k = 1; tx = m[0] + (aw - D.W * base) / 2; ty = m[1] + (ah - D.H * base) / 2; apply(); }
+  function fit() { vw = svg.clientWidth; vh = svg.clientHeight; const m = vw < 700 ? [10, 10, 10, 10] : [vw > 1100 ? 260 : 20, 16, 16, 16]; const aw = vw - m[0] - m[2], ah = vh - m[1] - m[3]; base = Math.min(aw / D.W, ah / D.H); k = 1; tx = m[0] + (aw - D.W * base) / 2; ty = m[1] + (ah - D.H * base) / 2; apply(); }
   let raf = 0; function apply() { vp.setAttribute('transform', `translate(${tx} ${ty}) scale(${k * base})`); cancelAnimationFrame(raf); raf = requestAnimationFrame(upd); }
   function upd() {
     const s = k * base, on = $('tLbl').checked; lblG.style.display = on ? '' : 'none';
-    if (on) D.lakes.forEach(l => { const v = l.a * k * k >= 160; l.t.style.display = v ? '' : 'none'; if (v) { l.t.style.fontSize = (11 / s) + 'px'; l.t.style.strokeWidth = (3 / s) + 'px'; } });
-    const sz = Math.min(1.25, 0.75 + k * 0.08) / s;
+    if (on) D.lakes.forEach(l => { const v = l.a * k * k >= 200; l.t.style.display = v ? '' : 'none'; if (v) { l.t.style.fontSize = (11.5 / s) + 'px'; l.t.style.strokeWidth = (3.5 / s) + 'px'; } });
+    const sz = Math.min(1.35, 0.62 + k * 0.1) / s;
+    vlbls.forEach(t => { t.style.fontSize = Math.max(44, 15 / s) + 'px'; t.style.display = $('tValley').checked && k < 4 ? '' : 'none'; });
+    const mPerPx = 11.132 / s, nice = [50, 100, 200, 500, 1000, 2000, 5000, 10000]; let Lm = nice[0]; for (const n of nice) if (n / mPerPx <= 110) Lm = n;
+    $('sbar').style.width = (Lm / mPerPx).toFixed(0) + 'px'; $('stxt').textContent = Lm >= 1000 ? Lm / 1000 + ' km' : Lm + ' m';
     gates.forEach(g => g.el.setAttribute('transform', `translate(${g.x} ${g.y}) scale(${sz})`));
   }
   function zoomAt(px, py, f) { const nk = Math.min(60, Math.max(1, k * f)); f = nk / k; tx = px - (px - tx) * f; ty = py - (py - ty) * f; k = nk; apply(); }
@@ -145,9 +158,9 @@
 
   // legend and filters
   const counts = {}; gates.forEach(g => counts[g.type] = (counts[g.type] || 0) + 1);
-  if (innerHeight < 800) $('legendBox').open = false; // keep the filters visible on small screens
-  $('legend').innerHTML = '<h4>Gate types</h4>' + Object.entries(TYPE).map(([t, d]) => `<div><svg width="18" height="18" viewBox="-9 -9 18 18" aria-hidden="true"><path d="${SHAPE[t]}" fill="${d.hex}" stroke="#fff" stroke-width="1.2"/></svg><span>${d.label} (${counts[t] || 0})<br><small>${d.where}</small></span></div>`).join('') +
-    '<h4 style="margin-top:8px">Status</h4><div><svg width="18" height="18" viewBox="-9 -9 18 18"><circle r="7" fill="none" stroke="#d0021b" stroke-width="2.5"/></svg><span>Ring: alarm (red P1 · orange P2 · yellow P3), blinking until acknowledged</span></div><div><svg width="18" height="18" viewBox="-9 -9 18 18"><text x="-4" y="4" font-size="11" font-weight="700" fill="#1b5fb4">M</text></svg><span>M manual · L local (site) control</span></div><div><svg width="18" height="18" viewBox="-9 -9 18 18"><path d="M-7 0H7" stroke="#8d6a55" stroke-dasharray="3 2"/></svg><span>Lost water body (when shown)</span></div>' +
+  if (innerHeight < 1150) $('legendBox').open = false; // keep the map clear on smaller screens
+  $('legend').innerHTML = '<h4>Gate types</h4>' + Object.entries(TYPE).map(([t, d]) => `<div><svg width="18" height="18" viewBox="-9 -9 18 18" aria-hidden="true"><path d="${SHAPE[t]}" fill="${d.hex}" stroke="#0b0e10" stroke-width="1.4"/></svg><span>${d.label} (${counts[t] || 0})<br><small>${d.where}</small></span></div>`).join('') +
+    '<h4 style="margin-top:8px">Status</h4><div><svg width="18" height="18" viewBox="-9 -9 18 18"><circle r="7" fill="none" stroke="#ff3b3b" stroke-width="2.5"/></svg><span>Ring: alarm (red P1 · orange P2 · yellow P3), blinking until acknowledged</span></div><div><svg width="18" height="18" viewBox="-9 -9 18 18"><text x="-4" y="4" font-size="11" font-weight="700" fill="#4aa3ff">M</text></svg><span>M manual · L local (site) control</span></div><div><svg width="18" height="18" viewBox="-9 -9 18 18"><path d="M-7 0H7" stroke="#b07a55" stroke-dasharray="3 2"/></svg><span>Lost water body (when shown)</span></div>' +
     '<p class="note" style="margin:6px 0 0">Gate positions are an illustrative planning layout, not BBMP\'s asset register.</p>';
   Object.keys(VALLEY).forEach(v => $('fValley').add(new Option(v + ' valley', v)));
   Object.entries(TYPE).forEach(([t, d]) => $('fType').add(new Option(d.label, t)));
@@ -156,7 +169,7 @@
     gates.forEach(g => { const st = gateAlarmState(g); const show = (!v || g.valley === v) && (!t || g.type === t) && (!a || st.p) && (!mm || g.m.mode === 'manual' || g.m.mode === 'local'); g.el.style.display = show ? '' : 'none'; });
   }
   ['fValley', 'fType', 'fAlarm', 'fManual'].forEach(id => $(id).onchange = applyFilters);
-  $('tLbl').onchange = upd; $('tLost').onchange = e => $('lostG').style.display = e.target.checked ? '' : 'none';
+  $('tLbl').onchange = upd; $('tValley').onchange = upd; $('tLost').onchange = e => $('lostG').style.display = e.target.checked ? '' : 'none';
   $('q').oninput = e => {
     const v = e.target.value.trim().toLowerCase(), res = $('res'); res.innerHTML = ''; if (v.length < 2) return;
     const hits = gates.filter(g => g.id.toLowerCase().includes(v)).slice(0, 4).map(g => ['g', g]).concat(D.lakes.filter(l => l.n.toLowerCase().includes(v)).slice(0, 6).map(l => ['l', l]));
@@ -214,44 +227,44 @@
   const MY = h => 180 - h * 40;
   function mimic() {
     const g = sel, m = g.m, L = m.last, T = m.T, sv = $('mimic'), up = L.h1, dn = L.h2;
-    let h = `<rect x="0" y="180" width="400" height="30" fill="#c8bea6"/>`;
-    h += `<rect x="0" y="${MY(up)}" width="200" height="${Math.max(0, 180 - MY(up))}" fill="#7fa9c2"/><rect x="200" y="${MY(dn)}" width="200" height="${Math.max(0, 180 - MY(dn))}" fill="#9cbccf"/>`;
-    h += `<line x1="0" x2="190" y1="${MY(T.up.top)}" y2="${MY(T.up.top)}" stroke="#7a6e57" stroke-dasharray="4 3"/><text x="4" y="${MY(T.up.top) - 3}">${T.up.label} bank ${T.up.top} m</text>`;
-    const gx = 200, st = '#4a565b';
+    let h = `<rect x="0" y="180" width="400" height="30" fill="#2e2a22"/>`;
+    h += `<rect x="0" y="${MY(up)}" width="200" height="${Math.max(0, 180 - MY(up))}" fill="#1f6f99"/><rect x="200" y="${MY(dn)}" width="200" height="${Math.max(0, 180 - MY(dn))}" fill="#2a5f7c"/>`;
+    h += `<line x1="0" x2="190" y1="${MY(T.up.top)}" y2="${MY(T.up.top)}" stroke="#6b6252" stroke-dasharray="4 3"/><text x="4" y="${MY(T.up.top) - 3}">${T.up.label} bank ${T.up.top} m</text>`;
+    const gx = 200, st = '#9aa7af';
     if (g.type === 'vertical' || g.type === 'float') {
       const a = L.open, ta = (L.target ?? m.pos) / 100 * T.amax;
-      h += `<rect x="${gx - 6}" y="${MY(3.3)}" width="12" height="${180 - MY(3.3)}" fill="#b9bdbf" opacity=".6"/>`;
-      h += `<rect x="${gx - 4}" y="${MY(ta + 2.6)}" width="8" height="${2.6 * 40}" fill="none" stroke="#1b5fb4" stroke-dasharray="3 2"/>`;
-      h += `<rect x="${gx - 4}" y="${MY(a + 2.6)}" width="8" height="${2.6 * 40}" fill="${st}"/><rect x="${gx - 5}" y="${MY(a) - 2}" width="10" height="3" fill="#111"/>`;
-      if (g.type === 'float') { const fz = MY(Math.max(up, 0.3)); h += `<rect x="110" y="${fz - 10}" width="34" height="16" rx="4" fill="#e9c46a" stroke="#9b7a2b"/><path d="M127 ${fz - 10}V${MY(3.6)}H${gx}V${MY(a + 2.6)}" fill="none" stroke="#333" stroke-width="1.5"/><text x="96" y="${fz - 14}">Float</text>`; }
-      else h += `<rect x="${gx - 16}" y="${MY(3.5)}" width="32" height="14" fill="#7d8b91"/><line x1="${gx}" y1="${MY(3.5)}" x2="${gx}" y2="${MY(a + 2.6)}" stroke="#333" stroke-width="2"/>`;
+      h += `<rect x="${gx - 6}" y="${MY(3.3)}" width="12" height="${180 - MY(3.3)}" fill="#3a444b" opacity=".8"/>`;
+      h += `<rect x="${gx - 4}" y="${MY(ta + 2.6)}" width="8" height="${2.6 * 40}" fill="none" stroke="#4aa3ff" stroke-dasharray="3 2"/>`;
+      h += `<rect x="${gx - 4}" y="${MY(a + 2.6)}" width="8" height="${2.6 * 40}" fill="${st}"/><rect x="${gx - 5}" y="${MY(a) - 2}" width="10" height="3" fill="#000"/>`;
+      if (g.type === 'float') { const fz = MY(Math.max(up, 0.3)); h += `<rect x="110" y="${fz - 10}" width="34" height="16" rx="4" fill="#c9a43a" stroke="#e9c46a"/><path d="M127 ${fz - 10}V${MY(3.6)}H${gx}V${MY(a + 2.6)}" fill="none" stroke="#8b98a1" stroke-width="1.5"/><text x="96" y="${fz - 14}">Float</text>`; }
+      else h += `<rect x="${gx - 16}" y="${MY(3.5)}" width="32" height="14" fill="#55626a"/><line x1="${gx}" y1="${MY(3.5)}" x2="${gx}" y2="${MY(a + 2.6)}" stroke="#c6d0d6" stroke-width="2"/>`;
     } else if (g.type === 'radial') {
       const R = 4 * 40 * 0.55, px = gx + 70, py = MY(2.6) + 30, a = L.open;
       const ang = Math.asin(Math.min(1, (py - MY(a)) / R)), lip = [px - Math.cos(ang) * R, py - Math.sin(ang) * R * -1];
       const lipY = MY(a), lipX = px - Math.sqrt(Math.max(0, R * R - (py - lipY) ** 2)), topY = py - R * 0.55, topX = px - Math.sqrt(Math.max(0, R * R - (py - topY) ** 2));
-      h += `<path d="M${lipX} ${lipY}A${R} ${R} 0 0 0 ${topX} ${topY}" fill="none" stroke="${st}" stroke-width="6"/><line x1="${px}" y1="${py}" x2="${lipX}" y2="${lipY}" stroke="${st}" stroke-width="3"/><line x1="${px}" y1="${py}" x2="${topX}" y2="${topY}" stroke="${st}" stroke-width="3"/><circle cx="${px}" cy="${py}" r="5" fill="#222"/><text x="${px + 8}" y="${py}">trunnion</text>`;
+      h += `<path d="M${lipX} ${lipY}A${R} ${R} 0 0 0 ${topX} ${topY}" fill="none" stroke="${st}" stroke-width="6"/><line x1="${px}" y1="${py}" x2="${lipX}" y2="${lipY}" stroke="${st}" stroke-width="3"/><line x1="${px}" y1="${py}" x2="${topX}" y2="${topY}" stroke="${st}" stroke-width="3"/><circle cx="${px}" cy="${py}" r="5" fill="#d6dde2"/><text x="${px + 8}" y="${py}">trunnion</text>`;
     } else if (g.type === 'crest') {
       const hz = T.zmin - 0.2, len = 1.5 * 40, dy = (m.z - hz) * 40, dx = Math.sqrt(Math.max(0, len * len - dy * dy));
       const tdy = (L.target - hz) * 40, tdx = Math.sqrt(Math.max(0, len * len - tdy * tdy));
-      h += `<path d="M${gx - 60} 180L${gx - 25} ${MY(hz)}H${gx + 25}L${gx + 60} 180Z" fill="#b6b1a5"/>`;
-      h += `<line x1="${gx - 10}" y1="${MY(hz)}" x2="${gx - 10 + tdx}" y2="${MY(hz) - tdy}" stroke="#1b5fb4" stroke-dasharray="3 2" stroke-width="2"/>`;
-      h += `<line x1="${gx - 10}" y1="${MY(hz)}" x2="${gx - 10 + dx}" y2="${MY(hz) - dy}" stroke="${st}" stroke-width="6" stroke-linecap="round"/><circle cx="${gx - 10}" cy="${MY(hz)}" r="4" fill="#222"/>`;
+      h += `<path d="M${gx - 60} 180L${gx - 25} ${MY(hz)}H${gx + 25}L${gx + 60} 180Z" fill="#4a463c"/>`;
+      h += `<line x1="${gx - 10}" y1="${MY(hz)}" x2="${gx - 10 + tdx}" y2="${MY(hz) - tdy}" stroke="#4aa3ff" stroke-dasharray="3 2" stroke-width="2"/>`;
+      h += `<line x1="${gx - 10}" y1="${MY(hz)}" x2="${gx - 10 + dx}" y2="${MY(hz) - dy}" stroke="${st}" stroke-width="6" stroke-linecap="round"/><circle cx="${gx - 10}" cy="${MY(hz)}" r="4" fill="#d6dde2"/>`;
     } else if (g.type === 'flap') {
       const ang = L.flapFrac * 60 * Math.PI / 180, hy = MY(T.amax), len = (T.amax + 0.05) * 40, pa = m.pen / 100 * T.amax;
-      h += `<rect x="${gx - 8}" y="${MY(3)}" width="12" height="${hy - MY(3)}" fill="#b6b1a5"/>`;
+      h += `<rect x="${gx - 8}" y="${MY(3)}" width="12" height="${hy - MY(3)}" fill="#4a463c"/>`;
       h += `<rect x="${gx - 20}" y="${MY(pa + 1.4)}" width="7" height="${1.4 * 40}" fill="${st}"/><text x="${gx - 70}" y="${MY(pa + 1.4) - 4}">penstock</text>`;
-      h += `<line x1="${gx + 4}" y1="${hy}" x2="${gx + 4 + Math.sin(ang) * len}" y2="${hy + Math.cos(ang) * len}" stroke="${st}" stroke-width="5" stroke-linecap="round"/><circle cx="${gx + 4}" cy="${hy}" r="3" fill="#222"/><text x="${gx + 10}" y="${hy - 4}">flap</text>`;
-      h += `<circle cx="60" cy="40" r="10" fill="${L.pump ? '#2e7d32' : '#8d9398'}"/><text x="74" y="44">pump ${L.pump ? 'ON' : 'off'}</text>`;
+      h += `<line x1="${gx + 4}" y1="${hy}" x2="${gx + 4 + Math.sin(ang) * len}" y2="${hy + Math.cos(ang) * len}" stroke="${st}" stroke-width="5" stroke-linecap="round"/><circle cx="${gx + 4}" cy="${hy}" r="3" fill="#d6dde2"/><text x="${gx + 10}" y="${hy - 4}">flap</text>`;
+      h += `<circle cx="60" cy="40" r="10" fill="${L.pump ? '#3ccf6e' : '#55606a'}"/><text x="74" y="44">pump ${L.pump ? 'ON' : 'off'}</text>`;
     }
     // flow path: dashes move at a speed set by the discharge
     if (Math.abs(L.q) > 0.005) {
       const yy = MY(Math.min(up, dn, 0.4) / 2 + 0.05), dir = L.q > 0 ? 1 : -1;
-      h += `<path id="flowPath" d="M${dir > 0 ? 130 : 270} ${yy}H${dir > 0 ? 270 : 130}" stroke="${dir > 0 ? '#0b4f6c' : '#d0021b'}" stroke-width="3" stroke-dasharray="8 7" fill="none" marker-end="url(#ah)"/>`;
-      h = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${dir > 0 ? '#0b4f6c' : '#d0021b'}"/></marker></defs>` + h;
+      h += `<path id="flowPath" d="M${dir > 0 ? 130 : 270} ${yy}H${dir > 0 ? 270 : 130}" stroke="${dir > 0 ? '#7fd3ff' : '#ff3b3b'}" stroke-width="3" stroke-dasharray="8 7" fill="none" marker-end="url(#ah)"/>`;
+      h = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${dir > 0 ? '#7fd3ff' : '#ff3b3b'}"/></marker></defs>` + h;
       flowSpeed = dir * Math.min(120, 15 + 25 * Math.abs(L.q));
     } else flowSpeed = 0;
     h += `<text x="6" y="200">${T.up.label} ${up.toFixed(2)} m</text><text x="394" y="200" text-anchor="end">${T.dn.label} ${dn.toFixed(2)} m</text><text x="200" y="14" text-anchor="middle">${Math.abs(L.q).toFixed(2)} m³/s ${L.q < -0.005 ? 'REVERSE' : ''}</text>`;
-    h += `<text x="394" y="14" text-anchor="end" fill="#1b5fb4">dashed = target</text>`;
+    h += `<text x="394" y="14" text-anchor="end" fill="#4aa3ff">dashed = target</text>`;
     sv.innerHTML = h;
   }
   let flowSpeed = 0, flowOff = 0, lastF = 0;
@@ -367,7 +380,7 @@
   function refreshUI() {
     const n = { 1: 0, 2: 0, 3: 0 }; let un = 0, latest = null;
     for (const r of alarms.values()) { if (r.cleared === null) n[r.p]++; if (!r.acked) { un++; if (!latest || r.p < latest.p || (r.p === latest.p && r.raised > latest.raised)) latest = r; } }
-    $('c1').textContent = n[1]; $('c2').textContent = n[2]; $('c3').textContent = n[3]; $('cU').textContent = un;
+    $('c1').textContent = n[1]; $('c1').parentElement.classList.toggle('hot', n[1] > 0); $('c2').textContent = n[2]; $('c3').textContent = n[3]; $('cU').textContent = un;
     $('cG').textContent = gates.length; $('cM').textContent = gates.filter(g => g.m.mode === 'manual' || g.m.mode === 'local').length;
     $('almLatest').textContent = latest ? `${PR[latest.p]} ${latest.g.id} ${latest.g.place.n}: ${latest.msg}` : 'No unacknowledged alarms';
     $('simClock').textContent = fmtT(simT()); $('wallClock').textContent = ist();
