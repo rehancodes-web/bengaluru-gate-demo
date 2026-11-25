@@ -129,7 +129,7 @@
   <b>Bengaluru lake gate control board</b>
   <span class="grow"></span>
   <label>Flood case <select id="scenario"></select></label>
-  <label>Speed <select id="speed"><option value="1">1×</option><option value="10" selected>10×</option><option value="60">60×</option></select></label>
+  <label>Speed <select id="speed"><option value="1">1×</option><option value="10" selected>10×</option><option value="60">60×</option><option value="600">600×</option><option value="3600">3600× (1 h/s)</option></select></label>
   <button id="pause">Pause</button>
   <span class="clock">Sim <span id="simClock">00:00:00</span></span>
   <span class="clock">IST <span id="wallClock"></span></span>
@@ -201,6 +201,8 @@
 <dialog id="dlg"><form method="dialog"><header id="dlgTitle"></header><div class="body" id="dlgBody"></div><footer><button value="cancel">Cancel</button><button value="ok" class="pri" id="dlgOk">Execute</button></footer></form></dialog>
 
 <script src="gate-types.js"></script>
+<script src="real-rain-scenario.js"></script>
+<script src="real-rain.js"></script>
 <script src="bengaluru-water-data.js"></script>
 <script src="control.js"></script>
 </body>

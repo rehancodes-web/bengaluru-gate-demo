@@ -178,6 +178,16 @@ ok(/url=gate-assembly.html/.test(fs.readFileSync(path.join(__dirname,'mechanism.
   new vm.Script(fs.readFileSync(path.join(__dirname, 'control.js'), 'utf8')); ok(true, 'control.js parses');
 }
 
+// Track A: real NASA POWER rainfall replay
+{ const RAIN = require('./real-rain.js'); require('./real-rain-scenario.js')(GT, RAIN);
+  ok(RAIN.hourly.length === 336 && RAIN.hourly.every(x => x >= 0) && /NASA POWER/.test(RAIN.source), 'real hourly rain: 14 days from NASA POWER');
+  ok(RAIN.monthlyTotals['202208'] > 400, 'August 2022 was very wet in the NASA POWER record');
+  ok(GT.SCENARIOS[GT.REAL_SCENARIO] && GT.SCENARIOS[GT.REAL_SCENARIO].real, 'real storm registered as a flood case');
+  const r = RAIN.replay; ok(r.noGate.lakeSpill > 100000 && r.auto.lakeSpill === 0, 'replay: without an operable gate the lake overtops; with automatic control it does not');
+  ok(r.preRelease.stormPeak4to6Sep < r.auto.stormPeak4to6Sep - 0.3, 'replay: forecast-mode release lowers the storm peak');
+  ok([r.noGate, r.auto, r.preRelease].every(x => x.balance < 1e-3), 'replay: water balance closes');
+}
+
 // Mechanism and flow-at-gate calculations
 ok(Math.abs(GT.plateThrust(1.0, 0, 0, 2) - 1000*9.81*2*0.5) < 1e-6, 'hydrostatic thrust: 1 m of water on a 2 m plate is 9.81 kN');
 ok(GT.plateThrust(1.0, 1.0, 0, 2) === 0, 'no net thrust with equal levels');

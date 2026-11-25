@@ -389,9 +389,23 @@
     if (sel) { faceplate(); if (uiCount % 25 === 0) troubleshoot(); } else if (!selLake) valleySummary();
     table();
   }
+  // Track A: real satellite-derived rainfall (NASA POWER) and the gate decision it drives
+  function realRainCard() {
+    const R = window.REAL_RAIN; if (!R) return '';
+    const hr = R.hourly, max = Math.max(...hr), W = 400, Hh = 70, bw = W / hr.length;
+    const bars = hr.map((v, i) => `<rect x="${(i * bw).toFixed(2)}" y="${(Hh - v / max * (Hh - 4)).toFixed(1)}" width="${Math.max(0.6, bw - 0.2).toFixed(2)}" height="${(v / max * (Hh - 4)).toFixed(1)}" fill="#3a8db5"/>`).join('');
+    const days = Array.from({ length: hr.length / 24 }, (_, d) => d % 2 ? '' : `<text x="${d * 24 * bw + 2}" y="${Hh + 11}" font-size="9" fill="#8b98a1">${26 + d > 31 ? (26 + d - 31) + ' Sep' : (26 + d) + ' Aug'}</text>`).join('');
+    const r = R.replay, row = (l, x) => `<tr><td>${l}</td><td>${x.stormPeak4to6Sep.toFixed(2)} m</td><td>${x.lakeSpill.toLocaleString('en-IN')} m³</td></tr>`;
+    return `<h3 style="margin-top:14px">Real rainfall: 26 Aug – 8 Sep 2022</h3>
+      <svg viewBox="0 -2 ${W} ${Hh + 14}" style="width:100%;height:auto;background:#0c1013;border:1px solid var(--line);border-radius:3px" role="img" aria-label="Hourly rainfall bars">${bars}${days}</svg>
+      <p class="note" style="margin:4px 0 8px">NASA POWER hourly rain (MERRA-2, satellite-assimilated), east Bengaluru. August 2022: ${R.monthlyTotals['202208']} mm, so lakes were full before the September storm. Peak hour ${max.toFixed(1)} mm (about 50 km grid, smooths cloudbursts).</p>
+      <table><thead><tr><th>Replay, 6 ha lake</th><th>Peak 4–6 Sep</th><th>Overtopping</th></tr></thead><tbody>${row('No operable gate', r.noGate)}${row('Gate on automatic', r.auto)}${row('Forecast mode: open 24 h ahead', r.preRelease)}</tbody></table>
+      <p class="note">Decision: open outlet gates 24 h before a forecast storm when lakes are full. Choose the flood case "${esc(GT.REAL_SCENARIO || '')}" above to replay it on every gate.</p>`;
+  }
   function valleySummary() {
     const rows = Object.keys(VALLEY).map(v => { const gs = gates.filter(g => g.valley === v); return [v, gs.length, gs.filter(g => gateAlarmState(g).p).length, gs.filter(g => g.m.mode !== 'auto' && g.m.mode).length]; });
     $('noSel').innerHTML = `<h3>Network overview</h3><table><thead><tr><th>Valley</th><th>Gates</th><th>In alarm</th><th>Manual/local</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table>
+      ${realRainCard()}
       <p class="note" style="margin-top:10px">Select a gate marker on the map, or a lake to list its gates. Commands need an operator name, are confirmed before sending, and are logged.</p>
       <p class="note"><b>About this board.</b> Training and demonstration only: gates are simulated and the layout is illustrative. BBMP had sluice gates at about 10 lakes with 10 more in progress (Deccan Herald, April 2025); their positions are not public. A real system needs authenticated access on a closed network, PLC interlocks at each gate that this screen cannot bypass, and witnessed commissioning.</p>
       <p class="note"><b>Sources.</b> Lakes, streams, valleys and boundary: MOD Foundation, "Building a Resilient Bengaluru" (May 2026). Drainage divide context: Paani.Earth hydrology map (CC BY-NC-SA). Imagery for verification: ISRO NRSC Bhuvan. Display practice: ISA-101 high-performance HMI.</p>`;
